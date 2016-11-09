@@ -108,6 +108,7 @@ bool IsVReach(int x, int y, int xx, int yy)
 }
 bool IsReach(int x, int y, int xx, int yy)
 {
+	return false;
 	int qx[100], qy[100];
 	int l = 0, r = 1;
 	qx[0] = x;
@@ -160,7 +161,7 @@ bool IsCamp(int x, int y)
 bool IsValidMove(int x, int y, int xx, int yy)
 {
 	int typ = map[x][y] % TOTALKIND, tgtflg = map[xx][yy] / TOTALKIND, objflg = map[x][y] / TOTALKIND;
-	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (x == 0 && (y == 1 || y == 3)) || (x == 16 && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
+	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (((id == 0 && x == 0) || (id == 1 && x == 16)) && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
 	if (t) return false;
 	int dx = xx - x, dy = yy - y;
 	if (!dx && (dy == 1 || dy == -1)) return true;
@@ -315,7 +316,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr << id << endl;
-			cout << "Imp-Trial-Derpy-Derp-Herp" << endl;
+			cout << "Imp-Trial-Derpy-Derp-Herpy" << endl;
 			end();
 		}
 		else if (op == "refresh")
