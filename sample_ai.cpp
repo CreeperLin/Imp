@@ -12,30 +12,180 @@ const int UPPER_RANGE_L = 11, UPPER_RANGE_R = 16;
 const int LOWER_RANGE_L = 0, LOWER_RANGE_R = 5;
 const int H = 17;
 const int W = 5;
-const int dx[8] = {-1, 1, 0, 0, 1, 1, -1, -1};
-const int dy[8] = {0, 0, -1, 1, 1, -1, 1, -1};
-
+const int DX[8] = { -1, 1, 0, 0, 1, 1, -1, -1};
+const int DY[8] = {0, 0, -1, 1, 1, -1, 1, -1};
+//n,s,w,e,ne,nw,se,sw
 int rounds = 0;
 int id;
 int map[H][W];
 
-bool exist(int x, int y) {
-    return (LOWER_RANGE_L <= x && x <= LOWER_RANGE_R && 0 <= y && y < W)
-		|| (UPPER_RANGE_L <= x && x <= UPPER_RANGE_R && 0 <= y && y < W)
-		|| ((x == 6 || x == 8 || x == 10) && (y == 0 || y == 2 || y == 4));
+int mapi(int x, int y)
+{
+	return 5 * x + y;
 }
 
-void change() {
-    int x, y, xx, yy, col, kind;
-    cin >> x >> y >> xx >> yy >> col >> kind;
+int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(4, 1), mapi(4, 3),   mapi(11, 0), mapi(11, 2), mapi(11, 4), mapi(12, 1), mapi(12, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(14, 1), mapi(14, 3)};
+int swe[] = {mapi(15, 0), mapi(15, 2), mapi(15, 4), mapi(14, 1), mapi(14, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(12, 1), mapi(12, 3), mapi(5, 0), mapi(5, 2), mapi(5, 4), mapi(4, 1), mapi(4, 3) , mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(2, 1), mapi(2, 3)};
+int railh[35];
+int railv[37];
+//int base[]={mapi(0, 1), mapi(0, 3), mapi(16, 1), mapi(16, 3)};
+int camp[] = {mapi(2, 1), mapi(2, 3), mapi(3, 2), mapi(4, 1), mapi(4, 3), mapi(12, 1), mapi(12, 3), mapi(13, 2), mapi(14, 1), mapi(14, 3)};
+void rail()
+{
+	int rx[] = {1, 5, 6, 8, 10, 11, 15};
+	int n = 0;
+	for (int i = 0; i < 7; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			railh[n++] = mapi(rx[i], j);
+		}
+	}
+	n = 0;
+	for (int i = 0; i < 5; i += 4)
+	{
+		for (int j = 1; j < 16; j++)
+		{
+			railv[n++] = mapi(j, i);
+		}
+	}
+	for (int i = 5; i < 12; i++)
+	{
+		railv[n++] = mapi(i, 2);
+	}
+}
+
+bool exist(int x, int y)
+{
+	return (LOWER_RANGE_L <= x && x <= LOWER_RANGE_R && 0 <= y && y < W)
+	       || (UPPER_RANGE_L <= x && x <= UPPER_RANGE_R && 0 <= y && y < W)
+	       || ((x == 6 || x == 8 || x == 10) && (y == 0 || y == 2 || y == 4));
+}
+
+bool IsOnVRail(int x, int y)
+{
+	return ((y == 0 || y == 4) && x > 0 && x < 16) || ((y == 2) && x > 4 && x < 12);
+	int t = mapi(x, y);
+	for (int i = 0; i < 37; i++)
+	{
+		if (t == railv[i]) return true;
+	}
+	return false;
+}
+
+bool IsOnHRail(int x, int y)
+{
+	int rx[] = {1, 5, 6, 8, 10, 11, 15};
+	for (int i = 0; i < 7; i++)
+	{
+		if (x == rx[i]) return true;
+	}
+	return false;
+}
+bool IsOnRail(int x, int y)
+{
+	return IsOnVRail(x, y) || IsOnHRail(x, y);
+}
+bool IsHReach(int x, int y, int xx, int yy)
+{
+	if (x != xx) return false;
+	int dy = (y > yy) ? -1 : 1;
+	for (int i = y + dy; i != yy; i += dy)
+	{
+		if (!IsOnHRail(x, i) || map[x][i] != -2) return false;
+	}
+	return true;
+}
+bool IsVReach(int x, int y, int xx, int yy)
+{
+	if (y != yy) return false;
+	int dx = (x > xx) ? -1 : 1;
+	for (int i = x + dx; i != xx; i += dx)
+	{
+		if (!IsOnVRail(i, y) || map[i][y] != -2) return false;
+	}
+	return true;
+}
+bool IsReach(int x, int y, int xx, int yy)
+{
+	int qx[100], qy[100];
+	int l = 0, r = 1;
+	qx[0] = x;
+	qy[0] = y;
+	while (l < r)
+	{
+		int tx = qx[l], ty = qy[l];
+		for (int i = 0; i < 4; i++)
+		{
+			int cx = tx + DX[i], cy = ty + DY[i];
+			if(cx == xx && cy == yy) return true;
+			if(exist(cx, cy) && map[cx][cy] == -2 && IsOnRail(cx, cy))
+			{
+				qx[r] = cx;
+				qy[r] = cy;
+				r++;
+			}
+		}
+		l++;
+	}
+	return false;
+}
+bool IsNWE(int  x, int y)
+{
+	int t = mapi(x, y);
+	for (int i = 0; i < 20; i++)
+	{
+		if (t == nwe[i]) return true;
+	}
+	return false;
+}
+bool IsSWE(int  x, int y)
+{
+	int t = mapi(x, y);
+	for (int i = 0; i < 20; i++)
+	{
+		if (t == swe[i]) return true;
+	}
+	return false;
+}
+bool IsCamp(int x, int y)
+{
+	int t = mapi(x, y);
+	for (int i = 0; i < 10; i++)
+	{
+		if(t == camp[i]) return true;
+	}
+	return false;
+}
+bool IsValidMove(int x, int y, int xx, int yy)
+{
+	int typ = map[x][y] % TOTALKIND, tgtflg = map[xx][yy] / TOTALKIND, objflg = map[x][y] / TOTALKIND;
+	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (x == 0 && (y == 1 || y == 3)) || (x == 16 && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
+	if (t) return false;
+	int dx = xx - x, dy = yy - y;
+	if (!dx && (dy == 1 || dy == -1)) return true;
+	if (!dy && (dx == 1 || dx == -1)) return true;
+	if ((dx == 1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
+	if ((dx == -1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
+	if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
+	if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
+	if (map[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
+	return false;
+}
+
+void change()
+{
+	int x, y, xx, yy, col, kind;
+	cin >> x >> y >> xx >> yy >> col >> kind;
 	cerr << "Get updates:"  << endl;
 	cerr << x << ' ' << y << ' ' << xx << ' ' << yy << ' ' << col << ' ' << kind << endl;
-    int tar = col * TOTALKIND + kind;
-    if (x == xx && y == yy) map[x][y] = tar;
-    else {
-        map[x][y] = -2;
-        map[xx][yy] = tar;
-    }
+	int tar = col * TOTALKIND + kind;
+	if (x == xx && y == yy) map[x][y] = tar;
+	else
+	{
+		map[x][y] = -2;
+		map[xx][yy] = tar;
+	}
 }
 
 void show_init(int id)
@@ -114,79 +264,80 @@ void get_init()
 	map[11][4] = arr1[20];
 }
 
-void make_decision(int &x, int &y, int &xx, int &yy) {
-	int n = 0;
-    while (true) {
-		++n;
-        x = rand() % H;
-        y = rand() % W;
-		if (!exist(x, y)) continue;
-        if (map[x][y] == -2) continue;
-		if (x == 0 && (y == 1 || y == 3)) continue;
-		if (x == 16 && (y == 1 || y == 3)) continue;
-		if (map[x][y] % TOTALKIND == 9) continue;
-		if (map[x][y] % TOTALKIND == 11) continue;
-        if (map[x][y] / TOTALKIND == id) {
-            int tar = map[x][y] % TOTALKIND;
-            int d = rand() % 4;
-            xx = x + dx[d];
-            yy = y + dy[d];
-			cerr << "Trying " << x << ", " << y << " to " << xx << ", " << yy << endl;
-			if ((xx == 2 || xx == 4 || xx == 12 || xx == 14) && (yy == 1 || yy == 3)) continue;
-			if ((xx == 3 || xx == 13) && (yy == 2)) continue;
-            if (exist(xx, yy)) {
-                if (map[xx][yy] == -2) {
-                    return;
-                } else {
-                    if (map[xx][yy] / TOTALKIND == id) continue;
-					return;
-				}
-            }
-        }
+void make_decision(int &x, int &y, int &xx, int &yy)
+{
+	while (true)
+	{
+		x = rand() % H;
+		y = rand() % W;
+		xx = rand() % H;
+		yy = rand() % W;
+		cerr << "Trying " << x << ", " << y << " to " << xx << ", " << yy << "...";
+		if (IsValidMove(x, y, xx, yy))
+		{
+			cerr << "valid" << endl;
+			return;
+		}
+		cerr << "invalid" << endl;
 	}
 }
 
-inline void end() {
-    std::cout << "END\n" << std::flush;
+inline void end()
+{
+	std::cout << "END\n" << std::flush;
 }
 
 
-int main(int argc, char** argv) {
-//    unsigned seed = time(0);
-//    if (argc == 2) {
-//        cerr << "Excited! Get given seed = " << argv[1] << endl;
-//        seed = 0;
-//        for (char *pc = argv[1]; *pc; ++pc)
-//            seed = seed * 10 + (*pc - '0');
-//    }
-//    srand(seed);
-
-    for (int i = 0; i < H; ++i) {
-        for (int j = 0; j < W; ++j) {
-            map[i][j] = -2;
-        }
-    }
-    string op;
-    while (true) {
-        cin >> op;
-        if (op == "id") {
-            cin >> id;
+int main(int argc, char** argv)
+{
+	unsigned seed = time(0);
+	if (argc == 2)
+	{
+		cerr << "Excited! Get given seed = " << argv[1] << endl;
+		seed = 0;
+		for (char *pc = argv[1]; *pc; ++pc)
+			seed = seed * 10 + (*pc - '0');
+	}
+	srand(seed);
+	rail();
+	for (int i = 0; i < H; ++i)
+	{
+		for (int j = 0; j < W; ++j)
+		{
+			map[i][j] = -2;
+		}
+	}
+	string op;
+	while (true)
+	{
+		cin >> op;
+		if (op == "id")
+		{
+			cin >> id;
 			cerr << id << endl;
-            cout << "Sample AI" << endl;
-            end();
-		} else if (op == "refresh") {
+			cout << "Imp-Trial-Derpy-Derp-Herp" << endl;
+			end();
+		}
+		else if (op == "refresh")
+		{
 			get_init();
-        } else if (op == "init") {
+		}
+		else if (op == "init")
+		{
 			show_init(id);
 			end();
-		} else if (op == "message") {
-            change();
-        } else if (op == "action") {
-            int x, y, xx, yy;
-            make_decision(x, y, xx, yy);
+		}
+		else if (op == "message")
+		{
+			change();
+		}
+		else if (op == "action")
+		{
+			int x, y, xx, yy;
+			make_decision(x, y, xx, yy);
 			cerr << x << " " << y << " " << xx << " " << yy << endl;
-            cout << x << " " << y << " " << xx << " " << yy << endl;
-            end();
-        }
-    }
+			cout << x << " " << y << " " << xx << " " << yy << endl;
+			end();
+		}
+	}
 }
