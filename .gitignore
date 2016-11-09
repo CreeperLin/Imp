@@ -73,3 +73,15 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+blueChess.png
+__pycache__/chess.cpython-34.pyc
+stdio_ipc.py
+*.pyc
+sample_ai.cpp.bak
+*.png
+*.py
+board.jpg
+*.log
+result.json
+*.psd
+1/isvalidmove.cpp
