@@ -24,6 +24,16 @@ int mapi(int x, int y)
 	return 5 * x + y;
 }
 
+bool IsKill(int t1, int t2)
+{
+	if (t1 == 10 || t2 == 10)	return true;
+}
+
+bool IsKilled(int t1, int t2)
+{
+
+}
+
 int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(4, 1), mapi(4, 3),   mapi(11, 0), mapi(11, 2), mapi(11, 4), mapi(12, 1), mapi(12, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(14, 1), mapi(14, 3)};
 int swe[] = {mapi(15, 0), mapi(15, 2), mapi(15, 4), mapi(14, 1), mapi(14, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(12, 1), mapi(12, 3), mapi(5, 0), mapi(5, 2), mapi(5, 4), mapi(4, 1), mapi(4, 3) , mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(2, 1), mapi(2, 3)};
 int railh[35];
@@ -108,27 +118,33 @@ bool IsVReach(int x, int y, int xx, int yy)
 }
 bool IsReach(int x, int y, int xx, int yy)
 {
-	return false;
+//	return false;
+	int cmap[H][W] = {0};
 	int qx[100], qy[100];
 	int l = 0, r = 1;
 	qx[0] = x;
 	qy[0] = y;
 	while (l < r)
 	{
-		int tx = qx[l], ty = qy[l];
 		for (int i = 0; i < 4; i++)
 		{
-			int cx = tx + DX[i], cy = ty + DY[i];
-			if(cx == xx && cy == yy) return true;
-			if(exist(cx, cy) && map[cx][cy] == -2 && IsOnRail(cx, cy))
+			int cx = qx[l] + DX[i], cy = qy[l] + DY[i];
+			if(cx == xx && cy == yy)
+			{
+				cerr << "(bfs: " << l << " " << r << ")=Y" << endl;
+				return true;
+			}
+			if(exist(cx, cy) && map[cx][cy] == -2 && !cmap[cx][cy] && IsOnRail(cx, cy))
 			{
 				qx[r] = cx;
 				qy[r] = cy;
+				cmap[cx][cy] = 1;
 				r++;
 			}
 		}
 		l++;
 	}
+	cerr << "(bfs: " << l << " " << r << ")=N" << endl;
 	return false;
 }
 bool IsNWE(int  x, int y)
@@ -161,15 +177,23 @@ bool IsCamp(int x, int y)
 bool IsValidMove(int x, int y, int xx, int yy)
 {
 	int typ = map[x][y] % TOTALKIND, tgtflg = map[xx][yy] / TOTALKIND, objflg = map[x][y] / TOTALKIND;
+	cerr << typ << " " << tgtflg << " " << objflg << "Valid.0.";
 	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (((id == 0 && x == 0) || (id == 1 && x == 16)) && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
 	if (t) return false;
 	int dx = xx - x, dy = yy - y;
+	cerr << "1.";
 	if (!dx && (dy == 1 || dy == -1)) return true;
+	cerr << "2.";
 	if (!dy && (dx == 1 || dx == -1)) return true;
+	cerr << "3.";
 	if ((dx == 1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
+	cerr << "4.";
 	if ((dx == -1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
+	cerr << "5.";
 	if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
+	cerr << "6.";
 	if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
+	cerr << "7.";
 	if (map[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 	return false;
 }
@@ -267,13 +291,15 @@ void get_init()
 
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
-	while (true)
+	int n = 0;
+	while (n < 10000)
 	{
+		n++;
 		x = rand() % H;
 		y = rand() % W;
 		xx = rand() % H;
 		yy = rand() % W;
-		cerr << "Trying " << x << ", " << y << " to " << xx << ", " << yy << "...";
+		cerr << "Trial " << n << " : " << x << ", " << y << " to " << xx << ", " << yy << "...";
 		if (IsValidMove(x, y, xx, yy))
 		{
 			cerr << "valid" << endl;
@@ -281,6 +307,7 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 		}
 		cerr << "invalid" << endl;
 	}
+	cout << "GG" << endl;
 }
 
 inline void end()
@@ -316,7 +343,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr << id << endl;
-			cout << "Imp-Trial-Derpy-Derp-Herpy" << endl;
+			cout << "Imp-Trial-Derpy-Derp-Herpy-Boing~" << endl;
 			end();
 		}
 		else if (op == "refresh")
@@ -336,8 +363,9 @@ int main(int argc, char** argv)
 		{
 			int x, y, xx, yy;
 			make_decision(x, y, xx, yy);
-			cerr << x << " " << y << " " << xx << " " << yy << endl;
+			cerr << "Round " << rounds << " : " << x << " " << y << " " << xx << " " << yy << endl;
 			cout << x << " " << y << " " << xx << " " << yy << endl;
+			rounds++;
 			end();
 		}
 	}
