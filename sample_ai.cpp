@@ -203,8 +203,8 @@ bool IsCamp(int x, int y)
 bool IsValidMove(int x, int y, int xx, int yy)
 {
 	int typ = map[x][y] % TOTALKIND, tgtflg = map[xx][yy] / TOTALKIND, objflg = map[x][y] / TOTALKIND;
-	cerr << typ << " " << tgtflg << " " << objflg << "Valid.0.";
-	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (((id == 0 && x == 0) || (id == 1 && x == 16)) && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
+	cerr << typ << " " << tgtflg << " " << objflg << "validating.0.";
+	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
 	if (t) return false;
 	int dx = xx - x, dy = yy - y;
 	cerr << "1.";
@@ -212,9 +212,9 @@ bool IsValidMove(int x, int y, int xx, int yy)
 	cerr << "2.";
 	if (!dy && (dx == 1 || dx == -1)) return true;
 	cerr << "3.";
-	if ((dx == 1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
+	if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
 	cerr << "4.";
-	if ((dx == -1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
+	if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
 	cerr << "5.";
 	if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
 	cerr << "6.";
@@ -245,7 +245,8 @@ void show_init(int id)
 	//this line : kind1 kind2 ... etc
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
-	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+	//int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
 	cout << endl;
@@ -336,7 +337,7 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 			cerr << "valid" << endl;
 			int r = IsKill(x, y, xx, yy) - IsKilled(x, y, xx, yy);
 			if (r == 1) return;
-			else if (r == 0 && n > 1000) return;
+			else if (r == 0 && n > 2000) return;
 			else if (n > 5000) return;
 		}
 		cerr << "invalid" << endl;
@@ -372,7 +373,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr(0) << id << endl;
-			cout << "Imp-Trial-Derpy-Derp-Herpy-Boing~ZBJX" << endl;
+			cout << "Imp-Trial-ZBJX" << endl;
 			end();
 		}
 		else if (op == "refresh")
