@@ -1,12 +1,13 @@
 #include <ctime>
 #include <cstdlib>
 #include <vector>
+#include <queue>
 #include <string>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 0
+#define LOGLVL 1
 #define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
-
+#define cerra(i) if(LOGLVL<=i) cerr
 using namespace std;
 
 const int TOTALNUM = 25;
@@ -17,19 +18,97 @@ const int H = 17;
 const int W = 5;
 const int DX[8] = { -1, 1, 0, 0, 1, 1, -1, -1};
 const int DY[8] = {0, 0, -1, 1, 1, -1, 1, -1};
+const int INF = 0x3F3F3F3F;
 //n,s,w,e,ne,nw,se,sw
 int rounds = 0;
 int id;
 int map[H][W];
+int pcnt[2] = {0};
+int flag[2];
 
-int mapi(int x, int y)
+//class Chessboard
+//{
+//	public:
+//
+//};
+
+class Cpiece
 {
-	return 5 * x + y;
+	public:
+		bool enable;
+		int x;
+		int y;
+		void reset()
+		{
+			enable = false;
+			x = y = 0;
+		}
+};
+
+class Cmove
+{
+	public:
+		int x, y, xx, yy, rst;
+		bool operator<(Cmove t) const
+		{
+			return this->rst < t.rst;
+		}
+		Cmove(int _x, int _y, int _xx, int _yy, int _rst): x(_x), y(_y), xx(_xx), yy(_yy), rst(_rst) {}
+};
+
+Cpiece pcs[2][TOTALNUM];
+
+inline int GetFlag(int x, int y)
+{
+	return map[x][y] / TOTALKIND;
+}
+
+inline int GetKind(int x, int y)
+{
+	return map[x][y] % TOTALKIND;
+}
+
+inline int mapi(int x, int y)
+{
+	return W * x + y;
+}
+
+inline int i2x(int n)
+{
+	return n /= W;
+}
+
+inline int i2y(int n)
+{
+	return n %= W;
+}
+
+void refresh_list()
+{
+	cerr(0) << "refreshing list {" << endl;
+	pcnt[0] = pcnt[1] = 0;
+	for (int x = 0; x < H; x++)
+	{
+		for (int y = 0; y < W; y++)
+		{
+			if (map[x][y] != -2)
+			{
+				int f = GetFlag(x, y);
+				pcs[f][pcnt[f]].x = x;
+				pcs[f][pcnt[f]].y = y;
+				pcs[f][pcnt[f]].enable = true;
+				cerr(0) << "found " << GetKind(x, y) << " " << f << " " << x << " " << y << endl;
+				pcnt[f]++;
+			}
+		}
+	}
+	cerra(0) << "id 0:" << pcnt[0] << " id 1:" << pcnt[1] << endl;
+	cerra(0) << "}" << endl;
 }
 
 bool IsKill(int x, int y, int xx, int yy)
 {
-	int t1 = map[x][y] % TOTALKIND, t2 = map[xx][yy] % TOTALKIND;
+	int t1 = GetKind(x, y), t2 = GetKind(xx, yy);
 	if (t2 == -2) return false;
 	if (t1 == 10 || t2 == 10)
 		return true;
@@ -46,7 +125,7 @@ bool IsKill(int x, int y, int xx, int yy)
 
 bool IsKilled(int x, int y, int xx, int yy)
 {
-	int t1 = map[x][y] % TOTALKIND, t2 = map[xx][yy] % TOTALKIND;
+	int t1 = GetKind(x, y), t2 = GetKind(xx, yy);
 	if (t2 == -2) return false;
 	if (t1 == 10 || t2 == 10)
 		return true;
@@ -62,34 +141,8 @@ bool IsKilled(int x, int y, int xx, int yy)
 
 int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(4, 1), mapi(4, 3),   mapi(11, 0), mapi(11, 2), mapi(11, 4), mapi(12, 1), mapi(12, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(14, 1), mapi(14, 3)};
 int swe[] = {mapi(15, 0), mapi(15, 2), mapi(15, 4), mapi(14, 1), mapi(14, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(12, 1), mapi(12, 3), mapi(5, 0), mapi(5, 2), mapi(5, 4), mapi(4, 1), mapi(4, 3) , mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(2, 1), mapi(2, 3)};
-int railh[35];
-int railv[37];
-//int base[]={mapi(0, 1), mapi(0, 3), mapi(16, 1), mapi(16, 3)};
+int base[] = {mapi(0, 1), mapi(0, 3), mapi(16, 1), mapi(16, 3)};
 int camp[] = {mapi(2, 1), mapi(2, 3), mapi(3, 2), mapi(4, 1), mapi(4, 3), mapi(12, 1), mapi(12, 3), mapi(13, 2), mapi(14, 1), mapi(14, 3)};
-void rail()
-{
-	int rx[] = {1, 5, 6, 8, 10, 11, 15};
-	int n = 0;
-	for (int i = 0; i < 7; i++)
-	{
-		for (int j = 0; j < 5; j++)
-		{
-			railh[n++] = mapi(rx[i], j);
-		}
-	}
-	n = 0;
-	for (int i = 0; i < 5; i += 4)
-	{
-		for (int j = 1; j < 16; j++)
-		{
-			railv[n++] = mapi(j, i);
-		}
-	}
-	for (int i = 5; i < 12; i++)
-	{
-		railv[n++] = mapi(i, 2);
-	}
-}
 
 bool exist(int x, int y)
 {
@@ -101,12 +154,6 @@ bool exist(int x, int y)
 bool IsOnVRail(int x, int y)
 {
 	return ((y == 0 || y == 4) && x > 0 && x < 16) || ((y == 2) && x > 4 && x < 12);
-	int t = mapi(x, y);
-	for (int i = 0; i < 37; i++)
-	{
-		if (t == railv[i]) return true;
-	}
-	return false;
 }
 
 bool IsOnHRail(int x, int y)
@@ -144,7 +191,6 @@ bool IsVReach(int x, int y, int xx, int yy)
 }
 bool IsReach(int x, int y, int xx, int yy)
 {
-//	return false;
 	int cmap[H][W] = {0};
 	int qx[100], qy[100];
 	int l = 0, r = 1;
@@ -157,10 +203,10 @@ bool IsReach(int x, int y, int xx, int yy)
 			int cx = qx[l] + DX[i], cy = qy[l] + DY[i];
 			if(cx == xx && cy == yy)
 			{
-				cerr << "(bfs: " << l << " " << r << ")=Y" << endl;
+				cerra(0) << "(bfs: " << l << " " << r << ")=Y" << endl;
 				return true;
 			}
-			if(exist(cx, cy) && map[cx][cy] == -2 && !cmap[cx][cy] && IsOnRail(cx, cy))
+			if(IsOnRail(cx, cy) && map[cx][cy] == -2 && !cmap[cx][cy])
 			{
 				qx[r] = cx;
 				qy[r] = cy;
@@ -170,7 +216,7 @@ bool IsReach(int x, int y, int xx, int yy)
 		}
 		l++;
 	}
-	cerr << "(bfs: " << l << " " << r << ")=N" << endl;
+	cerra(0) << "(bfs: " << l << " " << r << ")=N" << endl;
 	return false;
 }
 bool IsNWE(int  x, int y)
@@ -200,38 +246,73 @@ bool IsCamp(int x, int y)
 	}
 	return false;
 }
+bool IsBase(int x, int y)
+{
+	int t = mapi(x, y);
+	for (int i = 0; i < 4; i++)
+	{
+		if(t == base[i]) return true;
+	}
+	return false;
+}
 bool IsValidMove(int x, int y, int xx, int yy)
 {
-	int typ = map[x][y] % TOTALKIND, tgtflg = map[xx][yy] / TOTALKIND, objflg = map[x][y] / TOTALKIND;
-	cerr << typ << " " << tgtflg << " " << objflg << "validating.0.";
+	int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
+	cerra(0) << typ << " " << tgtflg << " " << objflg << ")validating.0.";
 	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
 	if (t) return false;
 	int dx = xx - x, dy = yy - y;
-	cerr << "1.";
+	cerra(0) << "1.";
 	if (!dx && (dy == 1 || dy == -1)) return true;
-	cerr << "2.";
+	cerra(0) << "2.";
 	if (!dy && (dx == 1 || dx == -1)) return true;
-	cerr << "3.";
+	cerra(0) << "3.";
 	if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
-	cerr << "4.";
+	cerra(0) << "4.";
 	if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
-	cerr << "5.";
+	cerra(0) << "5.";
 	if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
-	cerr << "6.";
+	cerra(0) << "6.";
 	if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
-	cerr << "7.";
+	cerra(0) << "7.";
 	if (map[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 	return false;
+}
+
+int Dist(int x1, int y1, int x2, int y2)
+{
+	return abs(x1 - x2) + abs(y1 - y2);
+}
+
+int PValue(int x, int y)
+{
+	if(IsBase(x, y) && map[x][y] != 11) return -INF;
+	int d = Dist(x, y, i2x(flag[!id]), i2y(flag[!id])) / 4;
+	int pv = -d;
+	if (IsCamp(x, y)) pv += 1;
+	return pv;
+}
+
+int Value(int x, int y)
+{
+	int tv = 0, f = GetFlag(x, y), t = GetKind(x, y);
+	int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 0, 15};
+	tv = bv[t] + PValue(x, y) / 2;
+	return tv;
 }
 
 void change()
 {
 	int x, y, xx, yy, col, kind;
 	cin >> x >> y >> xx >> yy >> col >> kind;
-	cerr(0) << "Get updates:"  << endl;
-	cerr << x << ' ' << y << ' ' << xx << ' ' << yy << ' ' << col << ' ' << kind << endl;
+	cerr(1) << "Get updates:"  << endl;
+	cerra(1) << x << ' ' << y << ' ' << xx << ' ' << yy << ' ' << col << ' ' << kind << endl;
 	int tar = col * TOTALKIND + kind;
-	if (x == xx && y == yy) map[x][y] = tar;
+	if (x == xx && y == yy)
+	{
+		cerr(5) << "WOW" << endl;
+		map[x][y] = tar;
+	}
 	else
 	{
 		map[x][y] = -2;
@@ -245,8 +326,8 @@ void show_init(int id)
 	//this line : kind1 kind2 ... etc
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
-	//int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
-	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
+	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+	//int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
 	cout << endl;
@@ -323,27 +404,54 @@ inline void end()
 
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
-	int n = 0;
-	while (n < 10000)
+	clock_t st = clock();
+	double ct = 0;
+	priority_queue <Cmove> move;
+	cerr(1) << "Trying {" << endl;
+	for (int i = 0; i < TOTALNUM; i++)
 	{
-		n++;
-		x = rand() % H;
-		y = rand() % W;
-		xx = rand() % H;
-		yy = rand() % W;
-		cerr(0) << "Trial " << n << " : " << x << ", " << y << " to " << xx << ", " << yy << "...";
-		if (IsValidMove(x, y, xx, yy))
+		if (!pcs[id][i].enable) continue;
+		x = pcs[id][i].x;
+		y = pcs[id][i].y;
+		for (xx = 0; xx < H; xx++)
 		{
-			cerr << "valid" << endl;
-			int r = IsKill(x, y, xx, yy) - IsKilled(x, y, xx, yy);
-			if (r == 1) return;
-			else if (r == 0 && n > 2000) return;
-			else if (n > 5000) return;
+			for (yy = 0; yy < W && (ct = static_cast<double>(clock() - st) / CLOCKS_PER_SEC) < 0.95; yy++)
+			{
+				cerra(0) << "Trial " << ct << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
+				if (IsValidMove(x, y, xx, yy))
+				{
+					cerra(0) << "valid" << endl;
+					int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
+					move.push(Cmove(x, y, xx, yy, r));
+					cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << r << endl;
+				}
+				else cerr(0) << "invalid" << endl;
+			}
 		}
-		cerr << "invalid" << endl;
 	}
-	cout << "GG";
-	end();
+	cerra(1) << "}" << endl;
+	if(move.empty())
+	{
+		cout << "GG";
+		end();
+	}
+	else
+	{
+		cerr(2) << "valid queue size:" << move.size() << endl;
+		Cmove t = move.top();
+		x = t.x;
+		y = t.y;
+		xx = t.xx;
+		yy = t.yy;
+		cerr(2) << "printing queue:{" << endl;
+		while(!move.empty())
+		{
+			Cmove s = move.top();
+			cerr << s.x << " " << s.y << " " << s.xx << " " << s.yy << " " << s.rst << endl;
+			move.pop();
+		}
+		cerra(2) << "}" << endl;
+	}
 }
 
 int main(int argc, char** argv)
@@ -357,7 +465,6 @@ int main(int argc, char** argv)
 			seed = seed * 10 + (*pc - '0');
 	}
 	srand(seed);
-	//rail();
 	for (int i = 0; i < H; ++i)
 	{
 		for (int j = 0; j < W; ++j)
@@ -372,13 +479,16 @@ int main(int argc, char** argv)
 		if (op == "id")
 		{
 			cin >> id;
-			cerr(0) << id << endl;
+			cerr(5) << "My id:" << id << endl;
 			cout << "Imp-Trial-ZBJX" << endl;
 			end();
 		}
 		else if (op == "refresh")
 		{
 			get_init();
+			refresh_list();
+			flag[0] = (map[0][1] == 11) ? 1 : 3;
+			flag[1] = (map[16][1] == 11) ? mapi(16, 1) : mapi(16, 3);
 		}
 		else if (op == "init")
 		{
@@ -391,10 +501,12 @@ int main(int argc, char** argv)
 		}
 		else if (op == "action")
 		{
+			refresh_list();
 			int x, y, xx, yy;
 			cerr(5) << "Round " << rounds << ": {" << endl;
 			make_decision(x, y, xx, yy);
-			cerr(5) << "Action: " << x << " " << y << " " << xx << " " << yy << endl << "}" << endl;
+			cerra(5) << "}" << endl;
+			cerr(5) << "Action: " << x << " " << y << " " << xx << " " << yy << endl;
 			cout << x << " " << y << " " << xx << " " << yy << endl;
 			rounds++;
 			end();
