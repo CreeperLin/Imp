@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
+#define LOGLVL 1
 using namespace std;
 
 const int TOTALNUM = 25;
@@ -26,12 +27,31 @@ int mapi(int x, int y)
 
 bool IsKill(int t1, int t2)
 {
-	if (t1 == 10 || t2 == 10)	return true;
+	if (t1 == 10 || t2 == 10)
+		return true;
+	if (t2 == 9)
+	{
+		if (t1 == 8)
+			return true;
+		return false;
+	}
+	if (t1 <= t2)
+		return true;
+	return false;
 }
 
 bool IsKilled(int t1, int t2)
 {
-
+	if (t1 == 10 || t2 == 10)
+		return true;
+	if (t2 == 9)
+	{
+		if (t1 == 8)
+			return false;
+		return true;
+	}
+	if (t1 >= t2)
+		return true;
 }
 
 int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(4, 1), mapi(4, 3),   mapi(11, 0), mapi(11, 2), mapi(11, 4), mapi(12, 1), mapi(12, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(14, 1), mapi(14, 3)};
