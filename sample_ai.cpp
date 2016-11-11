@@ -30,7 +30,7 @@ int mapi(int x, int y)
 bool IsKill(int x, int y, int xx, int yy)
 {
 	int t1 = map[x][y] % TOTALKIND, t2 = map[xx][yy] % TOTALKIND;
-	if (t2==-2) return false;
+	if (t2 == -2) return false;
 	if (t1 == 10 || t2 == 10)
 		return true;
 	if (t2 == 9)
@@ -47,7 +47,7 @@ bool IsKill(int x, int y, int xx, int yy)
 bool IsKilled(int x, int y, int xx, int yy)
 {
 	int t1 = map[x][y] % TOTALKIND, t2 = map[xx][yy] % TOTALKIND;
-	if (t2==-2) return false;
+	if (t2 == -2) return false;
 	if (t1 == 10 || t2 == 10)
 		return true;
 	if (t2 == 9)
@@ -334,10 +334,10 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 		if (IsValidMove(x, y, xx, yy))
 		{
 			cerr << "valid" << endl;
-			int r=IsKill(x,y,xx,yy) - IsKilled(x,y,xx,yy);
+			int r = IsKill(x, y, xx, yy) - IsKilled(x, y, xx, yy);
 			if (r == 1) return;
-			else if (r==0&&n>1000) return;
-			else if (n>5000) return;
+			else if (r == 0 && n > 1000) return;
+			else if (n > 5000) return;
 		}
 		cerr << "invalid" << endl;
 	}
@@ -391,9 +391,9 @@ int main(int argc, char** argv)
 		else if (op == "action")
 		{
 			int x, y, xx, yy;
-			cerr(5) << "Round " << rounds << ": {" <<endl;
+			cerr(5) << "Round " << rounds << ": {" << endl;
 			make_decision(x, y, xx, yy);
-			cerr(5) << "Action: " << x << " " << y << " " << xx << " " << yy << endl<<"}"<<endl;
+			cerr(5) << "Action: " << x << " " << y << " " << xx << " " << yy << endl << "}" << endl;
 			cout << x << " " << y << " " << xx << " " << yy << endl;
 			rounds++;
 			end();
