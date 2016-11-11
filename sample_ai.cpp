@@ -4,7 +4,9 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 1
+#define LOGLVL 0
+#define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
+
 using namespace std;
 
 const int TOTALNUM = 25;
@@ -25,8 +27,10 @@ int mapi(int x, int y)
 	return 5 * x + y;
 }
 
-bool IsKill(int t1, int t2)
+bool IsKill(int x, int y, int xx, int yy)
 {
+	int t1 = map[x][y] % TOTALKIND, t2 = map[xx][yy] % TOTALKIND;
+	if (t2==-2) return false;
 	if (t1 == 10 || t2 == 10)
 		return true;
 	if (t2 == 9)
@@ -40,8 +44,10 @@ bool IsKill(int t1, int t2)
 	return false;
 }
 
-bool IsKilled(int t1, int t2)
+bool IsKilled(int x, int y, int xx, int yy)
 {
+	int t1 = map[x][y] % TOTALKIND, t2 = map[xx][yy] % TOTALKIND;
+	if (t2==-2) return false;
 	if (t1 == 10 || t2 == 10)
 		return true;
 	if (t2 == 9)
@@ -222,7 +228,7 @@ void change()
 {
 	int x, y, xx, yy, col, kind;
 	cin >> x >> y >> xx >> yy >> col >> kind;
-	cerr << "Get updates:"  << endl;
+	cerr(0) << "Get updates:"  << endl;
 	cerr << x << ' ' << y << ' ' << xx << ' ' << yy << ' ' << col << ' ' << kind << endl;
 	int tar = col * TOTALKIND + kind;
 	if (x == xx && y == yy) map[x][y] = tar;
@@ -309,6 +315,11 @@ void get_init()
 	map[11][4] = arr1[20];
 }
 
+inline void end()
+{
+	std::cout << "END\n" << std::flush;
+}
+
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
 	int n = 0;
@@ -319,35 +330,33 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 		y = rand() % W;
 		xx = rand() % H;
 		yy = rand() % W;
-		cerr << "Trial " << n << " : " << x << ", " << y << " to " << xx << ", " << yy << "...";
+		cerr(0) << "Trial " << n << " : " << x << ", " << y << " to " << xx << ", " << yy << "...";
 		if (IsValidMove(x, y, xx, yy))
 		{
 			cerr << "valid" << endl;
-			return;
+			int r=IsKill(x,y,xx,yy) - IsKilled(x,y,xx,yy);
+			if (r == 1) return;
+			else if (r==0&&n>1000) return;
+			else if (n>5000) return;
 		}
 		cerr << "invalid" << endl;
 	}
-	cout << "GG" << endl;
+	cout << "GG";
+	end();
 }
-
-inline void end()
-{
-	std::cout << "END\n" << std::flush;
-}
-
 
 int main(int argc, char** argv)
 {
 	unsigned seed = time(0);
 	if (argc == 2)
 	{
-		cerr << "Excited! Get given seed = " << argv[1] << endl;
+		cerr(0) << "Excited! Get given seed = " << argv[1] << endl;
 		seed = 0;
 		for (char *pc = argv[1]; *pc; ++pc)
 			seed = seed * 10 + (*pc - '0');
 	}
 	srand(seed);
-	rail();
+	//rail();
 	for (int i = 0; i < H; ++i)
 	{
 		for (int j = 0; j < W; ++j)
@@ -362,8 +371,8 @@ int main(int argc, char** argv)
 		if (op == "id")
 		{
 			cin >> id;
-			cerr << id << endl;
-			cout << "Imp-Trial-Derpy-Derp-Herpy-Boing~" << endl;
+			cerr(0) << id << endl;
+			cout << "Imp-Trial-Derpy-Derp-Herpy-Boing~ZBJX" << endl;
 			end();
 		}
 		else if (op == "refresh")
@@ -382,8 +391,9 @@ int main(int argc, char** argv)
 		else if (op == "action")
 		{
 			int x, y, xx, yy;
+			cerr(5) << "Round " << rounds << ": {" <<endl;
 			make_decision(x, y, xx, yy);
-			cerr << "Round " << rounds << " : " << x << " " << y << " " << xx << " " << yy << endl;
+			cerr(5) << "Action: " << x << " " << y << " " << xx << " " << yy << endl<<"}"<<endl;
 			cout << x << " " << y << " " << xx << " " << yy << endl;
 			rounds++;
 			end();
