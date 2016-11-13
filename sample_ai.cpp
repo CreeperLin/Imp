@@ -137,6 +137,7 @@ bool IsKilled(int x, int y, int xx, int yy)
 	}
 	if (t1 >= t2)
 		return true;
+	return false;
 }
 
 int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(4, 1), mapi(4, 3),   mapi(11, 0), mapi(11, 2), mapi(11, 4), mapi(12, 1), mapi(12, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(14, 1), mapi(14, 3)};
@@ -284,20 +285,31 @@ int Dist(int x1, int y1, int x2, int y2)
 	return abs(x1 - x2) + abs(y1 - y2);
 }
 
+bool IsFlagBlocked(int cid)
+{
+	int fx = i2x(flag[cid]), fy = i2y(flag[cid]);
+	for (int i = 0; i < 4; i++)
+	{
+		int cx = fx + DX[i], cy = fy + DY[i];
+		if (exist(cx, cy) && map[cx][cy] == -2) return false;
+	}
+	return true;
+}
+
 int PValue(int x, int y)
 {
 	if(IsBase(x, y) && map[x][y] != 11) return -INF;
-	int d = Dist(x, y, i2x(flag[!id]), i2y(flag[!id])) / 4;
-	int pv = -d;
-	if (IsCamp(x, y)) pv += 1;
+	int d = Dist(x, y, i2x(flag[!id]), i2y(flag[!id]));
+	int pv = -d * IsFlagBlocked(!id) * 10;
+	if (IsCamp(x, y)) pv += 10;
 	return pv;
 }
 
 int Value(int x, int y)
 {
 	int tv = 0, f = GetFlag(x, y), t = GetKind(x, y);
-	int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 0, 0, 15};
-	tv = bv[t] + PValue(x, y) / 2;
+	int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 8, 15};
+	tv = 100 * bv[t] + PValue(x, y);
 	return tv;
 }
 
@@ -327,7 +339,7 @@ void show_init(int id)
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
 	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
-	//int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
+//	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
 	cout << endl;
@@ -421,11 +433,12 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 				if (IsValidMove(x, y, xx, yy))
 				{
 					cerra(0) << "valid" << endl;
+					cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
 					int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 					move.push(Cmove(x, y, xx, yy, r));
 					cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << r << endl;
 				}
-				else cerr(0) << "invalid" << endl;
+				else cerra(0) << "invalid" << endl;
 			}
 		}
 	}
