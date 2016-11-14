@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include <queue>
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <algorithm>
 #define LOGLVL 1
@@ -23,50 +23,9 @@ const int INF = 0x3F3F3F3F;
 int rounds = 0;
 int id;
 int map[H][W];
+int fmap[H][W];
 int pcnt[2] = {0};
 int flag[2];
-
-//class Chessboard
-//{
-//	public:
-//
-//};
-
-class Cpiece
-{
-	public:
-		bool enable;
-		int x;
-		int y;
-		void reset()
-		{
-			enable = false;
-			x = y = 0;
-		}
-};
-
-class Cmove
-{
-	public:
-		int x, y, xx, yy, rst;
-		bool operator<(Cmove t) const
-		{
-			return this->rst < t.rst;
-		}
-		Cmove(int _x, int _y, int _xx, int _yy, int _rst): x(_x), y(_y), xx(_xx), yy(_yy), rst(_rst) {}
-};
-
-Cpiece pcs[2][TOTALNUM];
-
-inline int GetFlag(int x, int y)
-{
-	return map[x][y] / TOTALKIND;
-}
-
-inline int GetKind(int x, int y)
-{
-	return map[x][y] % TOTALKIND;
-}
 
 inline int mapi(int x, int y)
 {
@@ -81,63 +40,6 @@ inline int i2x(int n)
 inline int i2y(int n)
 {
 	return n %= W;
-}
-
-void refresh_list()
-{
-	cerr(0) << "refreshing list {" << endl;
-	pcnt[0] = pcnt[1] = 0;
-	for (int x = 0; x < H; x++)
-	{
-		for (int y = 0; y < W; y++)
-		{
-			if (map[x][y] != -2)
-			{
-				int f = GetFlag(x, y);
-				pcs[f][pcnt[f]].x = x;
-				pcs[f][pcnt[f]].y = y;
-				pcs[f][pcnt[f]].enable = true;
-				cerr(0) << "found " << GetKind(x, y) << " " << f << " " << x << " " << y << endl;
-				pcnt[f]++;
-			}
-		}
-	}
-	cerra(0) << "id 0:" << pcnt[0] << " id 1:" << pcnt[1] << endl;
-	cerra(0) << "}" << endl;
-}
-
-bool IsKill(int x, int y, int xx, int yy)
-{
-	int t1 = GetKind(x, y), t2 = GetKind(xx, yy);
-	if (t2 == -2) return false;
-	if (t1 == 10 || t2 == 10)
-		return true;
-	if (t2 == 9)
-	{
-		if (t1 == 8)
-			return true;
-		return false;
-	}
-	if (t1 <= t2)
-		return true;
-	return false;
-}
-
-bool IsKilled(int x, int y, int xx, int yy)
-{
-	int t1 = GetKind(x, y), t2 = GetKind(xx, yy);
-	if (t2 == -2) return false;
-	if (t1 == 10 || t2 == 10)
-		return true;
-	if (t2 == 9)
-	{
-		if (t1 == 8)
-			return false;
-		return true;
-	}
-	if (t1 >= t2)
-		return true;
-	return false;
 }
 
 int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(4, 1), mapi(4, 3),   mapi(11, 0), mapi(11, 2), mapi(11, 4), mapi(12, 1), mapi(12, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(14, 1), mapi(14, 3)};
@@ -166,60 +68,12 @@ bool IsOnHRail(int x, int y)
 	}
 	return false;
 }
+
 bool IsOnRail(int x, int y)
 {
 	return IsOnVRail(x, y) || IsOnHRail(x, y);
 }
-bool IsHReach(int x, int y, int xx, int yy)
-{
-	if (x != xx) return false;
-	int dy = (y > yy) ? -1 : 1;
-	for (int i = y + dy; i != yy; i += dy)
-	{
-		if (!IsOnHRail(x, i) || map[x][i] != -2) return false;
-	}
-	return true;
-}
-bool IsVReach(int x, int y, int xx, int yy)
-{
-	if (y != yy) return false;
-	int dx = (x > xx) ? -1 : 1;
-	for (int i = x + dx; i != xx; i += dx)
-	{
-		if (!IsOnVRail(i, y) || map[i][y] != -2) return false;
-	}
-	return true;
-}
-bool IsReach(int x, int y, int xx, int yy)
-{
-	int cmap[H][W] = {0};
-	int qx[100], qy[100];
-	int l = 0, r = 1;
-	qx[0] = x;
-	qy[0] = y;
-	while (l < r)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			int cx = qx[l] + DX[i], cy = qy[l] + DY[i];
-			if(cx == xx && cy == yy)
-			{
-				cerra(0) << "(bfs: " << l << " " << r << ")=Y" << endl;
-				return true;
-			}
-			if(IsOnRail(cx, cy) && map[cx][cy] == -2 && !cmap[cx][cy])
-			{
-				qx[r] = cx;
-				qy[r] = cy;
-				cmap[cx][cy] = 1;
-				r++;
-			}
-		}
-		l++;
-	}
-	cerra(0) << "(bfs: " << l << " " << r << ")=N" << endl;
-	return false;
-}
+
 bool IsNWE(int  x, int y)
 {
 	int t = mapi(x, y);
@@ -229,6 +83,7 @@ bool IsNWE(int  x, int y)
 	}
 	return false;
 }
+
 bool IsSWE(int  x, int y)
 {
 	int t = mapi(x, y);
@@ -238,6 +93,7 @@ bool IsSWE(int  x, int y)
 	}
 	return false;
 }
+
 bool IsCamp(int x, int y)
 {
 	int t = mapi(x, y);
@@ -247,6 +103,7 @@ bool IsCamp(int x, int y)
 	}
 	return false;
 }
+
 bool IsBase(int x, int y)
 {
 	int t = mapi(x, y);
@@ -256,62 +113,283 @@ bool IsBase(int x, int y)
 	}
 	return false;
 }
-bool IsValidMove(int x, int y, int xx, int yy)
-{
-	int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
-	cerra(0) << typ << " " << tgtflg << " " << objflg << ")validating.0.";
-	bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (map[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (map[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((map[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
-	if (t) return false;
-	int dx = xx - x, dy = yy - y;
-	cerra(0) << "1.";
-	if (!dx && (dy == 1 || dy == -1)) return true;
-	cerra(0) << "2.";
-	if (!dy && (dx == 1 || dx == -1)) return true;
-	cerra(0) << "3.";
-	if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
-	cerra(0) << "4.";
-	if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
-	cerra(0) << "5.";
-	if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
-	cerra(0) << "6.";
-	if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
-	cerra(0) << "7.";
-	if (map[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
-	return false;
-}
 
 int Dist(int x1, int y1, int x2, int y2)
 {
 	return abs(x1 - x2) + abs(y1 - y2);
 }
 
-bool IsFlagBlocked(int cid)
+class Cpiece
 {
-	int fx = i2x(flag[cid]), fy = i2y(flag[cid]);
-	for (int i = 0; i < 4; i++)
-	{
-		int cx = fx + DX[i], cy = fy + DY[i];
-		if (exist(cx, cy) && map[cx][cy] == -2) return false;
-	}
-	return true;
-}
+	public:
+		int x;
+		int y;
+		Cpiece(): x(0), y(0) {}
+		Cpiece(int _x, int _y): x(_x), y(_y) {}
+		bool operator<(Cpiece t) const
+		{
+			return (id) ^ (this->x < t.x);
+		}
+};
 
-int PValue(int x, int y)
+class Cmove
 {
-	if(IsBase(x, y) && map[x][y] != 11) return -INF;
-	int d = Dist(x, y, i2x(flag[!id]), i2y(flag[!id]));
-	int pv = -d * IsFlagBlocked(!id) * 10;
-	if (IsCamp(x, y)) pv += 10;
-	return pv;
-}
+	public:
+		int x, y, xx, yy, rst;
+		bool operator<(Cmove t) const
+		{
+			return this->rst > t.rst;
+		}
+		Cmove(int _x, int _y, int _xx, int _yy, int _rst): x(_x), y(_y), xx(_xx), yy(_yy), rst(_rst) {}
+};
 
-int Value(int x, int y)
+class Chessboard
 {
-	int tv = 0, f = GetFlag(x, y), t = GetKind(x, y);
-	int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 8, 15};
-	tv = 100 * bv[t] + PValue(x, y);
-	return tv;
-}
+	public:
+		int cid;
+		int (&cmap)[H][W];
+		priority_queue <Cpiece> pcs;
+		Chessboard(): cid(0), cmap(::map), pcs() {}
+		Chessboard(int _cid, int (&_cmap)[H][W], const priority_queue<Cpiece> &_pcs):
+			cid(_cid), cmap(_cmap), pcs(_pcs) {}
+		Chessboard fork(int (&m)[H][W]) const
+		{
+//			return Chessboard(cid, m, pcs);
+			return Chessboard(cid, m, pcs);
+		}
+		priority_queue <Cpiece> refresh_list()
+		{
+			priority_queue <Cpiece> tpcs;
+			cerr(0) << "refreshing list {" << endl;
+			for (int x = 0; x < H; x++)
+			{
+				for (int y = 0; y < W; y++)
+				{
+					if (cmap[x][y] != -2 && GetFlag(x, y) == cid)
+					{
+						tpcs.push(Cpiece(x, y));
+						cerr(0) << "found " << GetKind(x, y) << " " << x << " " << y << endl;
+					}
+				}
+			}
+			pcnt[cid] = tpcs.size();
+			cerra(0) << "id " << cid << ":" << pcnt[1] << endl;
+			cerra(0) << "}" << endl;
+			return tpcs;
+		}
+		void refresh()
+		{
+			pcs = refresh_list();
+		}
+		void MoveBoard(Cmove mov)
+		{
+			if(IsKill(mov)) cmap[mov.xx][mov.yy] = cmap[mov.x][mov.y];
+			if(IsKilled(mov)) cmap[mov.xx][mov.yy] = -2;
+			cmap[mov.x][mov.y] = -2;
+			refresh();
+		}
+		inline int GetFlag(int x, int y)
+		{
+			return cmap[x][y] / TOTALKIND;
+		}
+		inline int GetKind(int x, int y)
+		{
+			return cmap[x][y] % TOTALKIND;
+		}
+		bool IsKill(Cmove mov)
+		{
+			return IsKill(mov.x, mov.y, mov.xx, mov.yy);
+		}
+		bool IsKill(int x, int y, int xx, int yy)
+		{
+			int t1 = GetKind(x, y), t2 = GetKind(xx, yy);
+			if (t2 == -2) return false;
+			if (t1 == 10 || t2 == 10)
+				return true;
+			if (t2 == 9)
+			{
+				if (t1 == 8)
+					return true;
+				return false;
+			}
+			if (t1 <= t2)
+				return true;
+			return false;
+		}
+		bool IsKilled(Cmove mov)
+		{
+			return IsKilled(mov.x, mov.y, mov.xx, mov.yy);
+		}
+		bool IsKilled(int x, int y, int xx, int yy)
+		{
+			int t1 = GetKind(x, y), t2 = GetKind(xx, yy);
+			if (t2 == -2) return false;
+			if (t1 == 10 || t2 == 10)
+				return true;
+			if (t2 == 9)
+			{
+				if (t1 == 8)
+					return false;
+				return true;
+			}
+			if (t1 >= t2)
+				return true;
+			return false;
+		}
+		bool IsHReach(int x, int y, int xx, int yy)
+		{
+			if (x != xx) return false;
+			int dy = (y > yy) ? -1 : 1;
+			for (int i = y + dy; i != yy; i += dy)
+			{
+				if (!IsOnHRail(x, i) || cmap[x][i] != -2) return false;
+			}
+			return true;
+		}
+		bool IsVReach(int x, int y, int xx, int yy)
+		{
+			if (y != yy) return false;
+			int dx = (x > xx) ? -1 : 1;
+			for (int i = x + dx; i != xx; i += dx)
+			{
+				if (!IsOnVRail(i, y) || cmap[i][y] != -2) return false;
+			}
+			return true;
+		}
+		bool IsReach(int x, int y, int xx, int yy)
+		{
+			int vmap[H][W] = {0};
+			int qx[100], qy[100];
+			int l = 0, r = 1;
+			qx[0] = x;
+			qy[0] = y;
+			while (l < r)
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					int cx = qx[l] + DX[i], cy = qy[l] + DY[i];
+					if(cx == xx && cy == yy)
+					{
+						cerra(0) << "(bfs: " << l << " " << r << ")=Y" << endl;
+						return true;
+					}
+					if(IsOnRail(cx, cy) && cmap[cx][cy] == -2 && !vmap[cx][cy])
+					{
+						qx[r] = cx;
+						qy[r] = cy;
+						vmap[cx][cy] = 1;
+						r++;
+					}
+				}
+				l++;
+			}
+			cerra(0) << "(bfs: " << l << " " << r << ")=N" << endl;
+			return false;
+		}
+		bool IsFlagBlocked(int tid)
+		{
+			int fx = i2x(flag[tid]), fy = i2y(flag[tid]);
+			for (int i = 0; i < 4; i++)
+			{
+				int cx = fx + DX[i], cy = fy + DY[i];
+				if (exist(cx, cy) && cmap[cx][cy] == -2) return false;
+			}
+			return true;
+		}
+		int PValue(int x, int y)
+		{
+			if(IsBase(x, y) && cmap[x][y] != 11) return -INF;
+			int d = Dist(x, y, i2x(flag[!cid]), i2y(flag[!cid]));
+			int pv = -d * IsFlagBlocked(!cid) * 10;
+			if (IsCamp(x, y)) pv += 10;
+			return pv;
+		}
+		int Value(int x, int y)
+		{
+			int tv = 0, t = GetKind(x, y);
+			if (t == -2) return 0;
+			int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 8, 15};
+			tv = 500 * bv[t] + PValue(x, y);
+			return tv;
+		}
+		bool IsValidMove(int x, int y, int xx, int yy)
+		{
+			int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
+			cerra(0) << typ << " " << tgtflg << " " << objflg << ")validating.0.";
+			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != id) || ((cmap[xx][yy] != -2) && (tgtflg == id)) || (typ == 9) || (typ == 11));
+			if (t) return false;
+			int dx = xx - x, dy = yy - y;
+			cerra(0) << "1.";
+			if (!dx && (dy == 1 || dy == -1)) return true;
+			cerra(0) << "2.";
+			if (!dy && (dx == 1 || dx == -1)) return true;
+			cerra(0) << "3.";
+			if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
+			cerra(0) << "4.";
+			if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
+			cerra(0) << "5.";
+			if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
+			cerra(0) << "6.";
+			if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
+			cerra(0) << "7.";
+			if (cmap[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
+			return false;
+		}
+		vector <Cmove> GenerateMoves()
+		{
+			vector <Cmove> move;
+			priority_queue <Cpiece> tpcs = pcs;
+			while (!tpcs.empty())
+			{
+				Cpiece tp = tpcs.top();
+				int x = tp.x, y = tp.y;
+				for (int xx = 0; xx < H; xx++)
+				{
+					for (int yy = 0; yy < W ; yy++)
+					{
+						cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
+						if (IsValidMove(x, y, xx, yy))
+						{
+							cerra(0) << "valid" << endl;
+							cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
+							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
+							move.push_back(Cmove(x, y, xx, yy, r));
+							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << r << endl;
+						}
+						else cerra(0) << "invalid" << endl;
+					}
+				}
+				tpcs.pop();
+			}
+			return move;
+		}
+		int Evaluate()
+		{
+			int score;
+			priority_queue <Cpiece> tpcs = pcs;
+			while (!tpcs.empty())
+			{
+				Cpiece tp = tpcs.top();
+				int x = tp.x, y = tp.y;
+				score += Value(x, y);
+				tpcs.pop();
+			}
+		}
+		void print()
+		{
+			cerr(1) << "Chessboard " << cid << ":{" << endl;
+			for (int i = H - 1; i >= 0; i--)
+			{
+				for (int j = 0; j < W; j++)
+				{
+					cerra(1) << cmap[i][j] << " ";
+				}
+				cerra(1) << endl;
+			}
+			cerra(1) << "}" << endl;
+		}
+};
+Chessboard CB[2];
 
 void change()
 {
@@ -414,57 +492,54 @@ inline void end()
 	std::cout << "END\n" << std::flush;
 }
 
-void make_decision(int &x, int &y, int &xx, int &yy)
+Cmove MCTS()
 {
 	clock_t st = clock();
 	double ct = 0;
-	priority_queue <Cmove> move;
-	cerr(1) << "Trying {" << endl;
-	for (int i = 0; i < TOTALNUM; i++)
-	{
-		if (!pcs[id][i].enable) continue;
-		x = pcs[id][i].x;
-		y = pcs[id][i].y;
-		for (xx = 0; xx < H; xx++)
-		{
-			for (yy = 0; yy < W && (ct = static_cast<double>(clock() - st) / CLOCKS_PER_SEC) < 0.95; yy++)
-			{
-				cerra(0) << "Trial " << ct << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
-				if (IsValidMove(x, y, xx, yy))
-				{
-					cerra(0) << "valid" << endl;
-					cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
-					int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
-					move.push(Cmove(x, y, xx, yy, r));
-					cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << r << endl;
-				}
-				else cerra(0) << "invalid" << endl;
-			}
-		}
-	}
-	cerra(1) << "}" << endl;
-	if(move.empty())
+	vector <Cmove> mov0 = CB[id].GenerateMoves();
+	if(mov0.empty())
 	{
 		cout << "GG";
 		end();
 	}
-	else
+	vector <Cmove> mov1 = CB[!id].GenerateMoves();
+	while((ct = (double)(clock() - st) / CLOCKS_PER_SEC) < 0.96)
 	{
-		cerr(2) << "valid queue size:" << move.size() << endl;
-		Cmove t = move.top();
-		x = t.x;
-		y = t.y;
-		xx = t.xx;
-		yy = t.yy;
-		cerr(2) << "printing queue:{" << endl;
-		while(!move.empty())
+		for (int i = 0; i < mov0.size(); i++)
 		{
-			Cmove s = move.top();
-			cerr << s.x << " " << s.y << " " << s.xx << " " << s.yy << " " << s.rst << endl;
-			move.pop();
+			for (int j = 0; j < mov1.size(); j++)
+			{
+				memcpy(fmap, map, sizeof(map));
+				Chessboard B0(CB[0].fork(fmap));
+				Chessboard B1(CB[1].fork(fmap));
+				B0.MoveBoard(mov0[i]);
+				B1.MoveBoard(mov1[j]);
+				int score = 0;
+				for (int r = 0; r < 10; r++)
+				{
+					vector <Cmove> mv0 = B0.GenerateMoves();
+					vector <Cmove> mv1 = B1.GenerateMoves();
+					if(!(mv0.size() || mv1.size())) break;
+					int c0 = rand() % mv0.size(), c1 = rand() % mv1.size();
+					B0.MoveBoard(mv0[c0]);
+					B1.MoveBoard(mv1[c1]);
+				}
+				mov0[i].rst += B0.Evaluate() - B1.Evaluate();
+			}
 		}
-		cerra(2) << "}" << endl;
 	}
+	sort(mov0.begin(), mov0.end());
+	return mov0[0];
+}
+
+void make_decision(int &x, int &y, int &xx, int &yy)
+{
+	Cmove t = MCTS();
+	x = t.x;
+	y = t.y;
+	xx = t.xx;
+	yy = t.yy;
+	cerr(2) << "printing valid moves:" <<  x << " " << y << " " << xx << " " << yy << " " << t.rst << endl;
 }
 
 int main(int argc, char** argv)
@@ -493,15 +568,20 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr(5) << "My id:" << id << endl;
-			cout << "Imp-Trial-ZBJX" << endl;
+			cout << "Imp-Trial-Probe" << endl;
 			end();
 		}
 		else if (op == "refresh")
 		{
 			get_init();
-			refresh_list();
+			CB[0].cid = 0;
+			CB[1].cid = 1;
+			CB[0].refresh();
+			CB[1].refresh();
 			flag[0] = (map[0][1] == 11) ? 1 : 3;
 			flag[1] = (map[16][1] == 11) ? mapi(16, 1) : mapi(16, 3);
+//			CB[0].print();
+//			CB[1].print();
 		}
 		else if (op == "init")
 		{
@@ -514,7 +594,8 @@ int main(int argc, char** argv)
 		}
 		else if (op == "action")
 		{
-			refresh_list();
+			CB[0].refresh();
+			CB[1].refresh();
 			int x, y, xx, yy;
 			cerr(5) << "Round " << rounds << ": {" << endl;
 			make_decision(x, y, xx, yy);
