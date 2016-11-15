@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 5
+#define LOGLVL 2
 #define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
 #define cerra(i) if(LOGLVL<=i) cerr
 using namespace std;
@@ -138,6 +138,10 @@ class Cpiece
 		{
 			return (id) ^ (this->x < t.x);//?
 		}
+		void print(int l)
+		{
+			cerra(l) << "x:" << x << " y:" << y << endl;
+		}
 };
 
 class Cmove
@@ -195,12 +199,17 @@ class Chessboard
 		}
 		void MoveBoard(Cmove mov)
 		{
-			if(IsKill(mov))
+			cerr(5) << cmap[mov.x][mov.y] << " " << cmap[mov.xx][mov.yy] << endl;
+			cerr(5) << IsKill(mov) << " " << IsKilled(mov) << endl;
+			if(IsKill(mov) || cmap[mov.xx][mov.yy] == -2)
 			{
-				cmap[mov.xx][mov.yy] = cmap[mov.x][mov.y];
+				int t = cmap[mov.x][mov.y];
+				cmap[mov.xx][mov.yy] = t;
 				if(IsKilled(mov)) cmap[mov.xx][mov.yy] = -2;
+				cerr(5) << cmap[mov.x][mov.y] << " " << cmap[mov.xx][mov.yy] << endl;
 			}
 			cmap[mov.x][mov.y] = -2;
+			cerr(5) << cmap[mov.x][mov.y] << " " << cmap[mov.xx][mov.yy] << endl;
 			refresh();
 		}
 		inline int GetFlag(int x, int y)
@@ -330,23 +339,23 @@ class Chessboard
 		bool IsValidMove(int x, int y, int xx, int yy)
 		{
 			int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
-//			cerra(0) << typ << " " << tgtflg << " " << objflg << ")validating.0.";
+			cerra(0) << typ << " " << tgtflg << " " << objflg << ")validating.0.";
 			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != cid) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
 			if (t) return false;
 			int dx = xx - x, dy = yy - y;
-//			cerra(0) << "1.";
+			cerra(0) << "1.";
 			if (!dx && (dy == 1 || dy == -1)) return true;
-//			cerra(0) << "2.";
+			cerra(0) << "2.";
 			if (!dy && (dx == 1 || dx == -1)) return true;
-//			cerra(0) << "3.";
+			cerra(0) << "3.";
 			if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
-//			cerra(0) << "4.";
+			cerra(0) << "4.";
 			if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
-//			cerra(0) << "5.";
+			cerra(0) << "5.";
 			if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
-//			cerra(0) << "6.";
+			cerra(0) << "6.";
 			if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
-//			cerra(0) << "7.";
+			cerra(0) << "7.";
 			if (cmap[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
@@ -363,16 +372,16 @@ class Chessboard
 				{
 					for (int yy = 0; yy < W ; yy++)
 					{
-//						cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
+						cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
 						if (IsValidMove(x, y, xx, yy))
 						{
-//							cerra(0) << "valid" << endl;
+							cerra(0) << "valid" << endl;
 //							cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
 //							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 							move.push_back(Cmove(x, y, xx, yy, 0));
-//							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
+							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 						}
-//						else cerra(0) << "invalid" << endl;
+						else cerra(0) << "invalid" << endl;
 					}
 				}
 				tpcs.pop();
@@ -393,18 +402,26 @@ class Chessboard
 			}
 			return score;
 		}
-		void print()
+		void print(int l)
 		{
-			cerr(1) << "CB " << cid << ":{" << endl;
+			cerra(l) << "CB " << cid << ":{" << endl;
 			for (int i = H - 1; i >= 0; i--)
 			{
 				for (int j = 0; j < W; j++)
 				{
-					cerra(1) << cmap[i][j] << " ";
+					cerra(l) << cmap[i][j] << " ";
 				}
-				cerra(1) << endl;
+				cerra(l) << endl;
 			}
-			cerra(1) << "}" << endl;
+			priority_queue <Cpiece> tpcs = pcs;
+			while (!tpcs.empty())
+			{
+				Cpiece tp = tpcs.top();
+				tp.print(l);
+				tpcs.pop();
+			}
+			cerra(l) << "size:" << pcs.size() << endl;
+			cerra(l) << "}" << endl;
 		}
 };
 Chessboard CB[2];
@@ -579,9 +596,76 @@ Cmove MCTS()
 	return mov0[0];
 }
 
+int Negamax(int depth)
+{
+	static Chessboard TCB(CB[id].fork(fmap));
+	cerr(3) << "Negamax(depth " << depth << "):{\n";
+	TCB.cid = (depth % 2) ? id : !id;
+	TCB.refresh();
+	TCB.print(3);
+	if (depth >= 3) return TCB.Evaluate();
+	vector <Cmove> mov = TCB.GenerateMoves();
+	if (mov.empty()) return TCB.Evaluate();
+	int score = -INF;
+	for (int i = 0; i < mov.size(); i++)
+	{
+		mov[i].print(2);
+		int t1 = fmap[mov[i].x][mov[i].y], t2 = fmap[mov[i].xx][mov[i].yy];
+		TCB.MoveBoard(mov[i]);
+		score = max(score, -Negamax(depth + 1));
+		fmap[mov[i].x][mov[i].y] = t1, fmap[mov[i].xx][mov[i].yy] = t2;
+	}
+	cerra(3) << "}\n";
+	return score;
+}
+
+Cmove NMSearch(int depth)
+{
+	memcpy(fmap, map, sizeof(map));
+	Chessboard TCB(CB[id].fork(fmap));
+	Cmove mmov(-1, -1, -1, -1, -1);
+	vector <Cmove> mov = TCB.GenerateMoves();
+	if (mov.empty()) return mmov;
+	cerr(3) << "NMSearch(depth " << depth << "):{\n";
+	TCB.print(3);
+	int score = -INF;
+	for (int i = 0; i < mov.size(); i++)
+	{
+		mov[i].print(2);
+		int t1 = fmap[mov[i].x][mov[i].y], t2 = fmap[mov[i].xx][mov[i].yy];
+		TCB.MoveBoard(mov[i]);
+		int t = -Negamax(depth + 1);
+		if (t > score)
+		{
+			score = t;
+			mmov = mov[i];
+		}
+		fmap[mov[i].x][mov[i].y] = t1, fmap[mov[i].xx][mov[i].yy] = t2;
+	}
+	return mmov;
+}
+
+Cmove Alphabeta(int depth, int alpha, int beta)
+{
+	cerr(3) << "Alpha-Beta(depth " << depth << "):{\n";
+	vector <Cmove> mov0 = CB[id].GenerateMoves();
+	if(mov0.empty())
+	{
+		cout << "GG";
+		end();
+	}
+	cerra(3) << "}\n";
+}
+
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
-	Cmove t = MCTS();
+	st = clock();
+	Cmove t = NMSearch(1);
+	if(t.x == -1)
+	{
+		cout << "GG";
+		end();
+	}
 	x = t.x;
 	y = t.y;
 	xx = t.xx;
