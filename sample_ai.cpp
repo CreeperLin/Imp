@@ -53,7 +53,7 @@ int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3,
 int swe[] = {mapi(15, 0), mapi(15, 2), mapi(15, 4), mapi(14, 1), mapi(14, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(12, 1), mapi(12, 3), mapi(5, 0), mapi(5, 2), mapi(5, 4), mapi(4, 1), mapi(4, 3) , mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(2, 1), mapi(2, 3)};
 int base[] = {mapi(0, 1), mapi(0, 3), mapi(16, 1), mapi(16, 3)};
 int camp[] = {mapi(2, 1), mapi(2, 3), mapi(3, 2), mapi(4, 1), mapi(4, 3), mapi(12, 1), mapi(12, 3), mapi(13, 2), mapi(14, 1), mapi(14, 3)};
-int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 8, 15};
+int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 7, 8, 15};
 
 bool exist(int x, int y)
 {
@@ -349,19 +349,19 @@ class Chessboard
 			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != cid) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
 			if (t) return false;
 			int dx = xx - x, dy = yy - y;
-			cerra(0) << "1.";
+//			cerra(0) << "1.";
 			if (!dx && (dy == 1 || dy == -1)) return true;
-			cerra(0) << "2.";
+//			cerra(0) << "2.";
 			if (!dy && (dx == 1 || dx == -1)) return true;
-			cerra(0) << "3.";
+//			cerra(0) << "3.";
 			if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
-			cerra(0) << "4.";
+//			cerra(0) << "4.";
 			if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
-			cerra(0) << "5.";
+//			cerra(0) << "5.";
 			if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
-			cerra(0) << "6.";
+//			cerra(0) << "6.";
 			if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
-			cerra(0) << "7.";
+//			cerra(0) << "7.";
 			if (cmap[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
@@ -378,16 +378,16 @@ class Chessboard
 				{
 					for (int yy = 0; yy < W ; yy++)
 					{
-						cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
+//						cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
 						if (IsValidMove(x, y, xx, yy))
 						{
-							cerra(0) << "valid" << endl;
+//							cerra(0) << "valid" << endl;
 //							cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
 //							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 							move.push_back(Cmove(x, y, xx, yy, 0));
 //							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 						}
-						else cerra(0) << "invalid" << endl;
+//						else cerra(0) << "invalid" << endl;
 					}
 				}
 				tpcs.pop();
@@ -449,8 +449,8 @@ void show_init(int id)
 	//this line : kind1 kind2 ... etc
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
-	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
-//	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
+//	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
 	cout << endl;
