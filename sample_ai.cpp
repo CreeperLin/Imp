@@ -25,7 +25,6 @@ int rounds = 0;
 int id;
 int map[H][W];
 int fmap[H][W];
-int pcnt[2] = {0};
 int flag[2];
 clock_t st;
 
@@ -188,7 +187,7 @@ class Chessboard
 					}
 				}
 			}
-			pcnt[cid] = tpcs.size();
+//			pcnt[cid] = tpcs.size();
 //			cerra(0) << "id " << cid << ":" << pcnt[cid] << endl;
 //			cerra(0) << "}" << endl;
 			return tpcs;
@@ -199,17 +198,21 @@ class Chessboard
 		}
 		void MoveBoard(Cmove mov)
 		{
-			cerr(5) << cmap[mov.x][mov.y] << " " << cmap[mov.xx][mov.yy] << endl;
-			cerr(5) << IsKill(mov) << " " << IsKilled(mov) << endl;
+			if (!IsValidMove(mov))
+			{
+				cerr << "Boom" << endl;
+				cout << "halt";
+			}
+			bool t = IsKilled(mov);
 			if(IsKill(mov) || cmap[mov.xx][mov.yy] == -2)
 			{
-				int t = cmap[mov.x][mov.y];
-				cmap[mov.xx][mov.yy] = t;
-				if(IsKilled(mov)) cmap[mov.xx][mov.yy] = -2;
-				cerr(5) << cmap[mov.x][mov.y] << " " << cmap[mov.xx][mov.yy] << endl;
+				cmap[mov.xx][mov.yy] = cmap[mov.x][mov.y];
+				if(t)
+				{
+					cmap[mov.xx][mov.yy] = -2;
+				}
 			}
 			cmap[mov.x][mov.y] = -2;
-			cerr(5) << cmap[mov.x][mov.y] << " " << cmap[mov.xx][mov.yy] << endl;
 			refresh();
 		}
 		inline int GetFlag(int x, int y)
@@ -336,10 +339,14 @@ class Chessboard
 			tv = 500 * bv[t] + PValue(x, y);
 			return tv;
 		}
+		bool IsValidMove(Cmove mov)
+		{
+			return IsValidMove(mov.x, mov.y, mov.xx, mov.yy);
+		}
 		bool IsValidMove(int x, int y, int xx, int yy)
 		{
 			int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
-			cerra(0) << typ << " " << tgtflg << " " << objflg << ")validating.0.";
+			cerra(0) << "#id " << cid << " #o " << cmap[x][y] << " #t " << cmap[xx][yy] << " " << typ << " " << tgtflg << " " << objflg << ")validating.0.";
 			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != cid) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
 			if (t) return false;
 			int dx = xx - x, dy = yy - y;
@@ -424,7 +431,7 @@ class Chessboard
 			cerra(l) << "}" << endl;
 		}
 };
-Chessboard CB[2];
+Chessboard CB;
 
 void change()
 {
@@ -451,8 +458,8 @@ void show_init(int id)
 	//this line : kind1 kind2 ... etc
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
-//	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
-	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
+	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+//	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
 	cout << endl;
@@ -527,85 +534,91 @@ inline void end()
 	std::cout << "END\n" << std::flush;
 }
 
-Cmove MCTS()
-{
-	cerr(3) << "MCTS:{" << endl;
-	st = clock();
-	vector <Cmove> mov0 = CB[id].GenerateMoves();
-	if(mov0.empty())
-	{
-		cout << "GG";
-		end();
-	}
-	vector <Cmove> mov1 = CB[!id].GenerateMoves();
-	if(mov1.empty())
-	{
-		cerr(2) << "Opponent no move!!!" << endl;
-	}
-//	while(1)
-	int n = 0;
-	cerra(2) << "Size: mov0:" << mov0.size() << " mov1:" << mov1.size() << endl;
-	while(get_time() < 5)
-	{
-		cerra(5) << "Test " << n++ << "{\n";
-		for (int i = 0; i < mov0.size(); i++)
-		{
-			mov0[i].print(2);
-			cerra(2) << i << " Searching mov0:{\n";
-			for (int j = 0; j < mov1.size(); j++)
-			{
-				cerra(2) << j << " Searching mov1:{\n";
-				mov1[j].print(2);
-				memcpy(fmap, map, sizeof(map));
-				Chessboard B0(CB[0].fork(fmap));
-				Chessboard B1(CB[1].fork(fmap));
-				B0.MoveBoard(mov0[i]);
-				B1.MoveBoard(mov1[j]);
-				for (int r = 0; r < 3; r++)
-				{
-					cerra(2) << "round " << r << ":{\n";
-					vector <Cmove> mv0 = B0.GenerateMoves();
-					vector <Cmove> mv1 = B1.GenerateMoves();
-					if(!(mv0.size() || mv1.size())) break;
-					int c0 = rand() % mv0.size(), c1 = rand() % mv1.size();
-					cerra(2) << "B0 move:";
-					mv0[c0].print(2);
-					cerra(2) << "B1 move:";
-					mv1[c0].print(2);
-					B0.MoveBoard(mv0[c0]);
-					B1.MoveBoard(mv1[c1]);
-//					B0.print(2);
-//					B1.print(2);
-					cerra(2) << "}\n";
-				}
-				int s1 = B0.Evaluate(), s2 = B1.Evaluate();
-				cerra(3) << "s1:" << s1 << " s2:" << s2 << endl;
-				mov0[i].rst += s1 - s2;
-				cerra(2) << "}\n";
-			}
-			cerra(2) << "}\n";
-		}
-		cerra(2) << "}\n";
-	}
-	sort(mov0.begin(), mov0.end());
-	for (int i = 0; i < mov0.size(); i++)
-	{
-		mov0[i].print(3);
-	}
-	cerra(3) << "}" << endl;
-	return mov0[0];
-}
+//Cmove MCTS()
+//{
+//	cerr(3) << "MCTS:{" << endl;
+//	st = clock();
+//	vector <Cmove> mov0 = CB[id].GenerateMoves();
+//	if(mov0.empty())
+//	{
+//		cout << "GG";
+//		end();
+//	}
+//	vector <Cmove> mov1 = CB[!id].GenerateMoves();
+//	if(mov1.empty())
+//	{
+//		cerr(2) << "Opponent no move!!!" << endl;
+//	}
+////	while(1)
+//	int n = 0;
+//	cerra(2) << "Size: mov0:" << mov0.size() << " mov1:" << mov1.size() << endl;
+//	while(get_time() < 5)
+//	{
+//		cerra(5) << "Test " << n++ << "{\n";
+//		for (int i = 0; i < mov0.size(); i++)
+//		{
+//			mov0[i].print(2);
+//			cerra(2) << i << " Searching mov0:{\n";
+//			for (int j = 0; j < mov1.size(); j++)
+//			{
+//				cerra(2) << j << " Searching mov1:{\n";
+//				mov1[j].print(2);
+//				memcpy(fmap, map, sizeof(map));
+//				Chessboard B0(CB[0].fork(fmap));
+//				Chessboard B1(CB[1].fork(fmap));
+//				B0.MoveBoard(mov0[i]);
+//				B1.MoveBoard(mov1[j]);
+//				for (int r = 0; r < 3; r++)
+//				{
+//					cerra(2) << "round " << r << ":{\n";
+//					vector <Cmove> mv0 = B0.GenerateMoves();
+//					vector <Cmove> mv1 = B1.GenerateMoves();
+//					if(!(mv0.size() || mv1.size())) break;
+//					int c0 = rand() % mv0.size(), c1 = rand() % mv1.size();
+//					cerra(2) << "B0 move:";
+//					mv0[c0].print(2);
+//					cerra(2) << "B1 move:";
+//					mv1[c0].print(2);
+//					B0.MoveBoard(mv0[c0]);
+//					B1.MoveBoard(mv1[c1]);
+////					B0.print(2);
+////					B1.print(2);
+//					cerra(2) << "}\n";
+//				}
+//				int s1 = B0.Evaluate(), s2 = B1.Evaluate();
+//				cerra(3) << "s1:" << s1 << " s2:" << s2 << endl;
+//				mov0[i].rst += s1 - s2;
+//				cerra(2) << "}\n";
+//			}
+//			cerra(2) << "}\n";
+//		}
+//		cerra(2) << "}\n";
+//	}
+//	sort(mov0.begin(), mov0.end());
+//	for (int i = 0; i < mov0.size(); i++)
+//	{
+//		mov0[i].print(3);
+//	}
+//	cerra(3) << "}" << endl;
+//	return mov0[0];
+//}
 
 int Negamax(int depth)
 {
-	static Chessboard TCB(CB[id].fork(fmap));
-	cerr(3) << "Negamax(depth " << depth << "):{\n";
+	Chessboard TCB(CB.fork(fmap));
 	TCB.cid = (depth % 2) ? id : !id;
 	TCB.refresh();
-	TCB.print(3);
-	if (depth >= 3) return TCB.Evaluate();
+//	TCB.print(3);
+	int t = TCB.Evaluate();
+	if (depth >= 3)
+	{
+		cerra(3) << "End score:" << t << endl;
+		return t;
+	}
+	cerr(3) << "Negamax(depth " << depth << "):{\n";
 	vector <Cmove> mov = TCB.GenerateMoves();
-	if (mov.empty()) return TCB.Evaluate();
+	cerra(3) << "Moves:" << mov.size() << endl;
+	if (mov.empty()) return t;
 	int score = -INF;
 	for (int i = 0; i < mov.size(); i++)
 	{
@@ -615,6 +628,7 @@ int Negamax(int depth)
 		score = max(score, -Negamax(depth + 1));
 		fmap[mov[i].x][mov[i].y] = t1, fmap[mov[i].xx][mov[i].yy] = t2;
 	}
+	cerr(3) << "Score:" << score << endl;
 	cerra(3) << "}\n";
 	return score;
 }
@@ -622,7 +636,7 @@ int Negamax(int depth)
 Cmove NMSearch(int depth)
 {
 	memcpy(fmap, map, sizeof(map));
-	Chessboard TCB(CB[id].fork(fmap));
+	Chessboard TCB(CB.fork(fmap));
 	Cmove mmov(-1, -1, -1, -1, -1);
 	vector <Cmove> mov = TCB.GenerateMoves();
 	if (mov.empty()) return mmov;
@@ -642,13 +656,14 @@ Cmove NMSearch(int depth)
 		}
 		fmap[mov[i].x][mov[i].y] = t1, fmap[mov[i].xx][mov[i].yy] = t2;
 	}
+	cerr(3) << "Max score:" << score << endl;
 	return mmov;
 }
 
 Cmove Alphabeta(int depth, int alpha, int beta)
 {
 	cerr(3) << "Alpha-Beta(depth " << depth << "):{\n";
-	vector <Cmove> mov0 = CB[id].GenerateMoves();
+	vector <Cmove> mov0 = CB.GenerateMoves();
 	if(mov0.empty())
 	{
 		cout << "GG";
@@ -706,14 +721,10 @@ int main(int argc, char** argv)
 		else if (op == "refresh")
 		{
 			get_init();
-			CB[0].cid = 0;
-			CB[1].cid = 1;
-			CB[0].refresh();
-			CB[1].refresh();
+			CB.cid = id;
+			CB.refresh();
 			flag[0] = (map[0][1] == 11) ? 1 : 3;
 			flag[1] = (map[16][1] == 11) ? mapi(16, 1) : mapi(16, 3);
-//			CB[0].print(1);
-//			CB[1].print(1);
 		}
 		else if (op == "init")
 		{
@@ -726,8 +737,7 @@ int main(int argc, char** argv)
 		}
 		else if (op == "action")
 		{
-			CB[0].refresh();
-			CB[1].refresh();
+			CB.refresh();
 			int x, y, xx, yy;
 			cerr(5) << "Round " << rounds << ": {" << endl;
 			make_decision(x, y, xx, yy);
