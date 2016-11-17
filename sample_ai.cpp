@@ -383,8 +383,8 @@ class Chessboard
 						{
 							cerra(0) << "valid" << endl;
 //							cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
-//							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
-							move.push(Cmove(x, y, xx, yy, 0));
+							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
+							move.push(Cmove(x, y, xx, yy, r));
 							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 						}
 						else cerra(0) << "invalid" << endl;
@@ -532,47 +532,62 @@ inline void end()
 	std::cout << "END\n" << std::flush;
 }
 
-int Negamax(int depth)
+int AlphaBeta(int depth, int alpha, int beta, bool f)
 {
 	Chessboard TCB(CB.fork(fmap));
-	TCB.cid = (depth % 2) ? id : !id;
+	TCB.cid = f ? id : !id;
 	TCB.refresh();
 //	TCB.print(3);
-	int t = TCB.Evaluate();
-	if (depth >= 3)
+	int score = TCB.Evaluate();
+	if (depth <= 0)
 	{
-		cerra(3) << "End score:" << t << endl;
-		return t;
+		cerr(3) << "#0 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+		cerra(3) << "}\n";
+		return score;
 	}
-	cerr(3) << "Negamax(depth " << depth << "):{\n";
+	cerr(3) << "AlphaBeta(depth " << depth << "):{\n";
 	priority_queue <Cmove> move;
 	TCB.GenerateMoves(move);
+	if (move.empty())
+	{
+		cerr(3) << "#1 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+		cerra(3) << "}\n";
+		return score;
+	}
 	cerra(3) << "Moves:" << move.size() << endl;
-	if (move.empty()) return t;
-	int score = -INF;
 	while (!move.empty())
 	{
 		Cmove mov = move.top();
 		mov.print(2);
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
 		TCB.MoveBoard(mov);
-		score = max(score, -Negamax(depth + 1));
+		score = -AlphaBeta(depth - 1, -beta, -alpha, !f);
 		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
+		if (score >= beta)
+		{
+			cerra(3) << "#2 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+			cerra(3) << "}\n";
+			return score;
+		}
+		if (score > alpha)
+		{
+			alpha = score;
+		}
 		move.pop();
 	}
-	cerr(3) << "Score:" << score << endl;
+	cerra(3) << "#3 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 	cerra(3) << "}\n";
-	return score;
+	return alpha;
 }
 
-Cmove NMSearch(int depth)
+Cmove ABSearch(int depth)
 {
 	memcpy(fmap, map, sizeof(map));
 	Chessboard TCB(CB.fork(fmap));
 	Cmove mmov(-1, -1, -1, -1, -1);
 	priority_queue <Cmove> move;
 	TCB.GenerateMoves(move);
-	cerr(3) << "NMSearch(depth " << depth << "):{\n";
+	cerr(3) << "ABSearch(depth " << depth << "):{\n";
 	TCB.print(3);
 	int score = -INF;
 	while (!move.empty())
@@ -581,7 +596,7 @@ Cmove NMSearch(int depth)
 		mov.print(2);
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
 		TCB.MoveBoard(mov);
-		int t = -Negamax(depth + 1);
+		int t = -AlphaBeta(depth, -INF, INF, 0);
 		if (t > score)
 		{
 			score = t;
@@ -598,7 +613,7 @@ Cmove NMSearch(int depth)
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
 	st = clock();
-	Cmove t = NMSearch(1);
+	Cmove t = ABSearch(2);
 	if(t.x == -1)
 	{
 		cout << "GG";
