@@ -366,10 +366,9 @@ class Chessboard
 			if (cmap[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
-		vector <Cmove> GenerateMoves()
+		void GenerateMoves(priority_queue <Cmove> &move)
 		{
 			cerr(1) << "CB " << cid << ":Generating moves:{" << endl;
-			vector <Cmove> move;
 			priority_queue <Cpiece> tpcs = pcs;
 			while (!tpcs.empty())
 			{
@@ -385,7 +384,7 @@ class Chessboard
 							cerra(0) << "valid" << endl;
 //							cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
 //							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
-							move.push_back(Cmove(x, y, xx, yy, 0));
+							move.push(Cmove(x, y, xx, yy, 0));
 							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 						}
 						else cerra(0) << "invalid" << endl;
@@ -394,7 +393,6 @@ class Chessboard
 				tpcs.pop();
 			}
 			cerra(1) << "}\n";
-			return move;
 		}
 		int Evaluate()
 		{
@@ -534,75 +532,6 @@ inline void end()
 	std::cout << "END\n" << std::flush;
 }
 
-//Cmove MCTS()
-//{
-//	cerr(3) << "MCTS:{" << endl;
-//	st = clock();
-//	vector <Cmove> mov0 = CB[id].GenerateMoves();
-//	if(mov0.empty())
-//	{
-//		cout << "GG";
-//		end();
-//	}
-//	vector <Cmove> mov1 = CB[!id].GenerateMoves();
-//	if(mov1.empty())
-//	{
-//		cerr(2) << "Opponent no move!!!" << endl;
-//	}
-////	while(1)
-//	int n = 0;
-//	cerra(2) << "Size: mov0:" << mov0.size() << " mov1:" << mov1.size() << endl;
-//	while(get_time() < 5)
-//	{
-//		cerra(5) << "Test " << n++ << "{\n";
-//		for (int i = 0; i < mov0.size(); i++)
-//		{
-//			mov0[i].print(2);
-//			cerra(2) << i << " Searching mov0:{\n";
-//			for (int j = 0; j < mov1.size(); j++)
-//			{
-//				cerra(2) << j << " Searching mov1:{\n";
-//				mov1[j].print(2);
-//				memcpy(fmap, map, sizeof(map));
-//				Chessboard B0(CB[0].fork(fmap));
-//				Chessboard B1(CB[1].fork(fmap));
-//				B0.MoveBoard(mov0[i]);
-//				B1.MoveBoard(mov1[j]);
-//				for (int r = 0; r < 3; r++)
-//				{
-//					cerra(2) << "round " << r << ":{\n";
-//					vector <Cmove> mv0 = B0.GenerateMoves();
-//					vector <Cmove> mv1 = B1.GenerateMoves();
-//					if(!(mv0.size() || mv1.size())) break;
-//					int c0 = rand() % mv0.size(), c1 = rand() % mv1.size();
-//					cerra(2) << "B0 move:";
-//					mv0[c0].print(2);
-//					cerra(2) << "B1 move:";
-//					mv1[c0].print(2);
-//					B0.MoveBoard(mv0[c0]);
-//					B1.MoveBoard(mv1[c1]);
-////					B0.print(2);
-////					B1.print(2);
-//					cerra(2) << "}\n";
-//				}
-//				int s1 = B0.Evaluate(), s2 = B1.Evaluate();
-//				cerra(3) << "s1:" << s1 << " s2:" << s2 << endl;
-//				mov0[i].rst += s1 - s2;
-//				cerra(2) << "}\n";
-//			}
-//			cerra(2) << "}\n";
-//		}
-//		cerra(2) << "}\n";
-//	}
-//	sort(mov0.begin(), mov0.end());
-//	for (int i = 0; i < mov0.size(); i++)
-//	{
-//		mov0[i].print(3);
-//	}
-//	cerra(3) << "}" << endl;
-//	return mov0[0];
-//}
-
 int Negamax(int depth)
 {
 	Chessboard TCB(CB.fork(fmap));
@@ -616,17 +545,20 @@ int Negamax(int depth)
 		return t;
 	}
 	cerr(3) << "Negamax(depth " << depth << "):{\n";
-	vector <Cmove> mov = TCB.GenerateMoves();
-	cerra(3) << "Moves:" << mov.size() << endl;
-	if (mov.empty()) return t;
+	priority_queue <Cmove> move;
+	TCB.GenerateMoves(move);
+	cerra(3) << "Moves:" << move.size() << endl;
+	if (move.empty()) return t;
 	int score = -INF;
-	for (int i = 0; i < mov.size(); i++)
+	while (!move.empty())
 	{
-		mov[i].print(2);
-		int t1 = fmap[mov[i].x][mov[i].y], t2 = fmap[mov[i].xx][mov[i].yy];
-		TCB.MoveBoard(mov[i]);
+		Cmove mov = move.top();
+		mov.print(2);
+		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
+		TCB.MoveBoard(mov);
 		score = max(score, -Negamax(depth + 1));
-		fmap[mov[i].x][mov[i].y] = t1, fmap[mov[i].xx][mov[i].yy] = t2;
+		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
+		move.pop();
 	}
 	cerr(3) << "Score:" << score << endl;
 	cerra(3) << "}\n";
@@ -638,38 +570,29 @@ Cmove NMSearch(int depth)
 	memcpy(fmap, map, sizeof(map));
 	Chessboard TCB(CB.fork(fmap));
 	Cmove mmov(-1, -1, -1, -1, -1);
-	vector <Cmove> mov = TCB.GenerateMoves();
-	if (mov.empty()) return mmov;
+	priority_queue <Cmove> move;
+	TCB.GenerateMoves(move);
 	cerr(3) << "NMSearch(depth " << depth << "):{\n";
 	TCB.print(3);
 	int score = -INF;
-	for (int i = 0; i < mov.size(); i++)
+	while (!move.empty())
 	{
-		mov[i].print(2);
-		int t1 = fmap[mov[i].x][mov[i].y], t2 = fmap[mov[i].xx][mov[i].yy];
-		TCB.MoveBoard(mov[i]);
+		Cmove mov = move.top();
+		mov.print(2);
+		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
+		TCB.MoveBoard(mov);
 		int t = -Negamax(depth + 1);
 		if (t > score)
 		{
 			score = t;
-			mmov = mov[i];
+			mmov = mov;
 		}
-		fmap[mov[i].x][mov[i].y] = t1, fmap[mov[i].xx][mov[i].yy] = t2;
+		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
+		move.pop();
 	}
 	cerr(3) << "Max score:" << score << endl;
-	return mmov;
-}
-
-Cmove Alphabeta(int depth, int alpha, int beta)
-{
-	cerr(3) << "Alpha-Beta(depth " << depth << "):{\n";
-	vector <Cmove> mov0 = CB.GenerateMoves();
-	if(mov0.empty())
-	{
-		cout << "GG";
-		end();
-	}
 	cerra(3) << "}\n";
+	return mmov;
 }
 
 void make_decision(int &x, int &y, int &xx, int &yy)
