@@ -163,16 +163,15 @@ class Chessboard
 	public:
 		int cid;
 		int (&cmap)[H][W];
-		priority_queue <Cpiece> pcs;
-		Chessboard(): cid(0), cmap(::map), pcs() {}
-		Chessboard(int _cid, int (&_cmap)[H][W], const priority_queue<Cpiece> &_pcs):
-			cid(_cid), cmap(_cmap), pcs(_pcs) {}
+		Chessboard(): cid(0), cmap(::map){}
+		Chessboard(int _cid, int (&_cmap)[H][W]):
+			cid(_cid), cmap(_cmap){}
 		Chessboard fork(int (&m)[H][W]) const
 		{
 //			return Chessboard(cid, m, pcs);
-			return Chessboard(cid, m, pcs);
+			return Chessboard(cid, m);
 		}
-		priority_queue <Cpiece> refresh_list()
+		void refresh_list()
 		{
 			priority_queue <Cpiece> tpcs;
 //			cerr(0) << "CB " << cid << ":Refreshing list {" << endl;
@@ -190,11 +189,6 @@ class Chessboard
 //			pcnt[cid] = tpcs.size();
 //			cerra(0) << "id " << cid << ":" << pcnt[cid] << endl;
 //			cerra(0) << "}" << endl;
-			return tpcs;
-		}
-		void refresh()
-		{
-			pcs = refresh_list();
 		}
 		void MoveBoard(Cmove mov)
 		{
@@ -213,7 +207,6 @@ class Chessboard
 				}
 			}
 			cmap[mov.x][mov.y] = -2;
-			refresh();
 		}
 		inline int GetFlag(int x, int y)
 		{
@@ -347,7 +340,7 @@ class Chessboard
 		{
 			int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
 			cerra(0) << "#id " << cid << " #o " << cmap[x][y] << " #t " << cmap[xx][yy] << " " << typ << " " << tgtflg << " " << objflg << ")validating.0.";
-			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || (objflg != cid) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
+			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (objflg != cid) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
 			if (t) return false;
 			int dx = xx - x, dy = yy - y;
 			cerra(0) << "1.";
@@ -369,11 +362,10 @@ class Chessboard
 		void GenerateMoves(priority_queue <Cmove> &move)
 		{
 			cerr(1) << "CB " << cid << ":Generating moves:{" << endl;
-			priority_queue <Cpiece> tpcs = pcs;
-			while (!tpcs.empty())
-			{
-				Cpiece tp = tpcs.top();
-				int x = tp.x, y = tp.y;
+			for (int x = 0; x < H; x++)
+				{
+					for (int y = 0; y < W ; y++)
+					{
 				for (int xx = 0; xx < H; xx++)
 				{
 					for (int yy = 0; yy < W ; yy++)
@@ -390,14 +382,14 @@ class Chessboard
 						else cerra(0) << "invalid" << endl;
 					}
 				}
-				tpcs.pop();
+					}
 			}
 			cerra(1) << "}\n";
 		}
 		int Evaluate()
 		{
 			int score = 0;
-			priority_queue <Cpiece> tpcs = pcs;
+			priority_queue <Cpiece> tpcs;
 			while (!tpcs.empty())
 			{
 				Cpiece tp = tpcs.top();
@@ -417,16 +409,7 @@ class Chessboard
 					cerra(l) << cmap[i][j] << " ";
 				}
 				cerra(l) << endl;
-			}
-			priority_queue <Cpiece> tpcs = pcs;
-			while (!tpcs.empty())
-			{
-				Cpiece tp = tpcs.top();
-				tp.print(l);
-				tpcs.pop();
-			}
-			cerra(l) << "size:" << pcs.size() << endl;
-			cerra(l) << "}" << endl;
+			}	
 		}
 };
 Chessboard CB;
@@ -536,7 +519,6 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 {
 	Chessboard TCB(CB.fork(fmap));
 	TCB.cid = f ? id : !id;
-	TCB.refresh();
 //	TCB.print(3);
 	int score = TCB.Evaluate();
 	if (depth <= 0)
@@ -660,7 +642,6 @@ int main(int argc, char** argv)
 		{
 			get_init();
 			CB.cid = id;
-			CB.refresh();
 			flag[0] = (map[0][1] == 11) ? 1 : 3;
 			flag[1] = (map[16][1] == 11) ? mapi(16, 1) : mapi(16, 3);
 		}
@@ -675,7 +656,6 @@ int main(int argc, char** argv)
 		}
 		else if (op == "action")
 		{
-			CB.refresh();
 			int x, y, xx, yy;
 			cerr(5) << "Round " << rounds << ": {" << endl;
 			make_decision(x, y, xx, yy);
