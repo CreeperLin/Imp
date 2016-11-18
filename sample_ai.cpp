@@ -23,7 +23,7 @@ const int INF = 0x3F3F3F3F;
 //n,s,w,e,ne,nw,se,sw
 int rounds = 0;
 int id;
-int map[H][W];
+int map[H][W] = { -2};
 int fmap[H][W];
 int flag[2];
 clock_t st;
@@ -131,7 +131,8 @@ class Cpiece
 	public:
 		int x;
 		int y;
-		Cpiece(): x(0), y(0) {}
+		int k;
+		Cpiece(): x(0), y(0), k(-1) {}
 		Cpiece(int _x, int _y): x(_x), y(_y) {}
 		bool operator<(Cpiece t) const
 		{
@@ -163,12 +164,11 @@ class Chessboard
 	public:
 		int cid;
 		int (&cmap)[H][W];
-		Chessboard(): cid(0), cmap(::map){}
+		Chessboard(): cid(0), cmap(::map) {}
 		Chessboard(int _cid, int (&_cmap)[H][W]):
-			cid(_cid), cmap(_cmap){}
+			cid(_cid), cmap(_cmap) {}
 		Chessboard fork(int (&m)[H][W]) const
 		{
-//			return Chessboard(cid, m, pcs);
 			return Chessboard(cid, m);
 		}
 		void refresh_list()
@@ -363,39 +363,54 @@ class Chessboard
 		{
 			cerr(1) << "CB " << cid << ":Generating moves:{" << endl;
 			for (int x = 0; x < H; x++)
+			{
+				for (int y = 0; y < W ; y++)
 				{
-					for (int y = 0; y < W ; y++)
+					for (int xx = 0; xx < H; xx++)
 					{
-				for (int xx = 0; xx < H; xx++)
-				{
-					for (int yy = 0; yy < W ; yy++)
-					{
-						cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
-						if (IsValidMove(x, y, xx, yy))
+						for (int yy = 0; yy < W ; yy++)
 						{
-							cerra(0) << "valid" << endl;
-//							cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
-							int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
-							move.push(Cmove(x, y, xx, yy, r));
-							cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
+							cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
+							if (IsValidMove(x, y, xx, yy))
+							{
+								cerra(0) << "valid" << endl;
+//								cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
+								int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
+								move.push(Cmove(x, y, xx, yy, r));
+								cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
+							}
+							else cerra(0) << "invalid" << endl;
 						}
-						else cerra(0) << "invalid" << endl;
 					}
 				}
-					}
 			}
 			cerra(1) << "}\n";
 		}
 		int Evaluate()
 		{
 			int score = 0;
-			priority_queue <Cpiece> tpcs;
-			while (!tpcs.empty())
+			int pcnt[2] = {0};
+			int pkind[2][TOTALKIND] = {0};
+			Cpiece pcs[2][TOTALNUM];
+			for (int x = 0; x < H; x++)
 			{
-				Cpiece tp = tpcs.top();
-				int x = tp.x, y = tp.y;
-				score += 500 * bv[GetKind(x, y)] + 10 * PValue(x, y);
-				tpcs.pop();
+				for (int y = 0; y < W; y++)
+				{
+					if (map[x][y] != -2)
+					{
+						int f = GetFlag(x, y), t = GetKind(x, y);
+						pcs[f][pcnt[f]].x = x;
+						pcs[f][pcnt[f]].y = y;
+						pcs[f][pcnt[f]].k = t;
+						cerr(0) << "found " << t << " " << f << " " << x << " " << y << endl;
+						pcnt[f]++;
+						pkind[f][t]++;
+					}
+				}
+			}
+			for (int i = 0; i < pcnt[cid]; i++)
+			{
+				score += bv[pcs[cid][i].k] * (500 +  PValue(pcs[cid][i].x, pcs[cid][i].y));
 			}
 			return score;
 		}
@@ -409,7 +424,7 @@ class Chessboard
 					cerra(l) << cmap[i][j] << " ";
 				}
 				cerra(l) << endl;
-			}	
+			}
 		}
 };
 Chessboard CB;
@@ -518,8 +533,9 @@ inline void end()
 int AlphaBeta(int depth, int alpha, int beta, bool f)
 {
 	Chessboard TCB(CB.fork(fmap));
+//	Chessboard TCB((f ? id : !id), fmap);
 	TCB.cid = f ? id : !id;
-//	TCB.print(3);
+	TCB.print(1);
 	int score = TCB.Evaluate();
 	if (depth <= 0)
 	{
@@ -569,7 +585,7 @@ Cmove ABSearch(int depth)
 	Cmove mmov(-1, -1, -1, -1, -1);
 	priority_queue <Cmove> move;
 	TCB.GenerateMoves(move);
-	cerr(3) << "ABSearch(depth " << depth << "):{\n";
+	cerra(3) << "ABSearch(depth " << depth << "):{\n";
 	TCB.print(3);
 	int score = -INF;
 	while (!move.empty())
