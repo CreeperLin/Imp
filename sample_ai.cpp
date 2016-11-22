@@ -535,10 +535,11 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 	Chessboard TCB(CB.fork(fmap));
 //	Chessboard TCB((f ? id : !id), fmap);
 	TCB.cid = f ? id : !id;
-	TCB.print(1);
-	int score = TCB.Evaluate();
+//	TCB.print(1);
+	int score = 0;
 	if (depth <= 0)
 	{
+		score = TCB.Evaluate();
 		cerr(3) << "#0 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 		cerra(3) << "}\n";
 		return score;
@@ -548,6 +549,7 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 	TCB.GenerateMoves(move);
 	if (move.empty())
 	{
+		score = TCB.Evaluate();
 		cerr(3) << "#1 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 		cerra(3) << "}\n";
 		return score;
