@@ -6,7 +6,8 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 5
+#define LOGLVL 3
+#define DYMLYR 0
 #define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
 #define cerra(i) if(LOGLVL<=i) cerr
 using namespace std;
@@ -152,6 +153,7 @@ class Cmove
 		{
 			return this->rst > t.rst;
 		}
+		Cmove(): x(0), y(0), xx(0), yy(0) {}
 		Cmove(int _x, int _y, int _xx, int _yy, int _rst): x(_x), y(_y), xx(_xx), yy(_yy), rst(_rst) {}
 		void print(int l)
 		{
@@ -192,11 +194,11 @@ class Chessboard
 		}
 		void MoveBoard(Cmove mov)
 		{
-			if (!IsValidMove(mov))
-			{
-				cerr << "Boom" << endl;
-				cout << "halt";
-			}
+//			if (!IsValidMove(mov))
+//			{
+//				cerr << "Boom" << endl;
+//				cout << "halt";
+//			}
 			bool t = IsKilled(mov);
 			if(IsKill(mov) || cmap[mov.xx][mov.yy] == -2)
 			{
@@ -339,23 +341,23 @@ class Chessboard
 		bool IsValidMove(int x, int y, int xx, int yy)
 		{
 			int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
-			cerra(0) << "#id " << cid << " #o " << cmap[x][y] << " #t " << cmap[xx][yy] << " " << typ << " " << tgtflg << " " << objflg << ")validating.0.";
+//			cerra(0) << "#id " << cid << " #o " << cmap[x][y] << " #t " << cmap[xx][yy] << " " << typ << " " << tgtflg << " " << objflg << ")validating.0.";
 			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (objflg != cid) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
 			if (t) return false;
 			int dx = xx - x, dy = yy - y;
-			cerra(0) << "1.";
+//			cerra(0) << "1.";
 			if (!dx && (dy == 1 || dy == -1)) return true;
-			cerra(0) << "2.";
+//			cerra(0) << "2.";
 			if (!dy && (dx == 1 || dx == -1)) return true;
-			cerra(0) << "3.";
+//			cerra(0) << "3.";
 			if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
-			cerra(0) << "4.";
+//			cerra(0) << "4.";
 			if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
-			cerra(0) << "5.";
+//			cerra(0) << "5.";
 			if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
-			cerra(0) << "6.";
+//			cerra(0) << "6.";
 			if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
-			cerra(0) << "7.";
+//			cerra(0) << "7.";
 			if (cmap[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
@@ -370,16 +372,16 @@ class Chessboard
 					{
 						for (int yy = 0; yy < W ; yy++)
 						{
-							cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
+//							cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
 							if (IsValidMove(x, y, xx, yy))
 							{
-								cerra(0) << "valid" << endl;
+//								cerra(0) << "valid" << endl;
 //								cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
 								int r = Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 								move.push(Cmove(x, y, xx, yy, r));
-								cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
+//								cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 							}
-							else cerra(0) << "invalid" << endl;
+//							else cerra(0) << "invalid" << endl;
 						}
 					}
 				}
@@ -402,7 +404,7 @@ class Chessboard
 						pcs[f][pcnt[f]].x = x;
 						pcs[f][pcnt[f]].y = y;
 						pcs[f][pcnt[f]].k = t;
-						cerr(0) << "found " << t << " " << f << " " << x << " " << y << endl;
+//						cerr(0) << "found " << t << " " << f << " " << x << " " << y << endl;
 						pcnt[f]++;
 						pkind[f][t]++;
 					}
@@ -533,9 +535,9 @@ inline void end()
 
 int AlphaBeta(int depth, int alpha, int beta, bool f)
 {
-	Chessboard TCB(CB.fork(fmap));
-//	Chessboard TCB((f ? id : !id), fmap);
-	TCB.cid = f ? id : !id;
+//	Chessboard TCB(CB.fork(fmap));
+	Chessboard TCB((f ? id : !id), fmap);
+//	TCB.cid = f ? id : !id;
 //	TCB.print(1);
 	int score = 0;
 	if (depth <= 0)
@@ -610,11 +612,22 @@ Cmove ABSearch(int depth)
 	cerra(3) << "}\n";
 	return mmov;
 }
-
+double tmin = 5, tmax = 0, tsum = 0, tavg = 0;
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
 	st = clock();
+#if DYMLYR == 1
+	Cmove t(-1, -1, -1, -1, -1);
+	int m = 0;
+	while (30 * get_time() < 1)
+	{
+		m++;
+		t = ABSearch(m);
+	}
+	cerr(5) << "Layers: " << m << endl;
+#else
 	Cmove t = ABSearch(2);
+#endif
 	if(t.x == -1)
 	{
 		cout << "GG";
@@ -624,9 +637,14 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	y = t.y;
 	xx = t.xx;
 	yy = t.yy;
-	cerr(2) << "printing valid moves:";
-	t.print(2);
-	cerr(5) << "Time Elapsed: " << get_time() << endl;
+//	cerr(2) << "printing valid moves:";
+//	t.print(2);
+	double tm = get_time();
+	tmin = min(tmin, tm);
+	tmax = max(tmax, tm);
+	tsum += tm;
+	tavg = tsum / rounds;
+	cerr(5) << "[CT/Min/Max/Avg:" << tm << "/" << tmin << "/" << tmax << "/" << tavg << "]" << endl;
 }
 
 int main(int argc, char** argv)
@@ -655,7 +673,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr(5) << "My id:" << id << endl;
-			cout << "Imp-Trial-Probe" << endl;
+			cout << "Imp-Trial-AB-T" << endl;
 			end();
 		}
 		else if (op == "refresh")
@@ -677,12 +695,12 @@ int main(int argc, char** argv)
 		else if (op == "action")
 		{
 			int x, y, xx, yy;
+			rounds++;
 			cerr(5) << "Round " << rounds << ": {" << endl;
 			make_decision(x, y, xx, yy);
 			cerra(5) << "}" << endl;
 			cerr(5) << "Action: " << x << " " << y << " " << xx << " " << yy << endl;
 			cout << x << " " << y << " " << xx << " " << yy << endl;
-			rounds++;
 			end();
 		}
 	}
