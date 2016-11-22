@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 2
+#define LOGLVL 5
 #define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
 #define cerra(i) if(LOGLVL<=i) cerr
 using namespace std;
@@ -52,7 +52,7 @@ int nwe[] = {mapi(1, 0), mapi(1, 2), mapi(1, 4), mapi(2, 1), mapi(2, 3), mapi(3,
 int swe[] = {mapi(15, 0), mapi(15, 2), mapi(15, 4), mapi(14, 1), mapi(14, 3), mapi(13, 0), mapi(13, 2), mapi(13, 4), mapi(12, 1), mapi(12, 3), mapi(5, 0), mapi(5, 2), mapi(5, 4), mapi(4, 1), mapi(4, 3) , mapi(3, 0), mapi(3, 2), mapi(3, 4), mapi(2, 1), mapi(2, 3)};
 int base[] = {mapi(0, 1), mapi(0, 3), mapi(16, 1), mapi(16, 3)};
 int camp[] = {mapi(2, 1), mapi(2, 3), mapi(3, 2), mapi(4, 1), mapi(4, 3), mapi(12, 1), mapi(12, 3), mapi(13, 2), mapi(14, 1), mapi(14, 3)};
-int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 7, 8, 15};
+int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 7, 8, 150};
 
 bool exist(int x, int y)
 {
@@ -375,7 +375,7 @@ class Chessboard
 							{
 								cerra(0) << "valid" << endl;
 //								cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
-								int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
+								int r = Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 								move.push(Cmove(x, y, xx, yy, r));
 								cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 							}
@@ -410,7 +410,8 @@ class Chessboard
 			}
 			for (int i = 0; i < pcnt[cid]; i++)
 			{
-				score += bv[pcs[cid][i].k] * (500 +  PValue(pcs[cid][i].x, pcs[cid][i].y));
+//				score += bv[pcs[cid][i].k] * (500 +  PValue(pcs[cid][i].x, pcs[cid][i].y));
+				score += bv[pcs[cid][i].k] * 500;
 			}
 			return score;
 		}
@@ -625,6 +626,7 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	yy = t.yy;
 	cerr(2) << "printing valid moves:";
 	t.print(2);
+	cerr(5) << "Time Elapsed: " << get_time() << endl;
 }
 
 int main(int argc, char** argv)
