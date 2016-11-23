@@ -26,6 +26,7 @@ int rounds = 0;
 int id;
 int map[H][W] = { -2};
 int fmap[H][W];
+int map_score[2][H][W] = {0};
 int flag[2];
 clock_t st;
 
@@ -151,13 +152,13 @@ class Cmove
 		int x, y, xx, yy, rst;
 		bool operator<(Cmove t) const
 		{
-			return this->rst > t.rst;
+			return this->rst < t.rst;
 		}
 		Cmove(): x(0), y(0), xx(0), yy(0) {}
 		Cmove(int _x, int _y, int _xx, int _yy, int _rst): x(_x), y(_y), xx(_xx), yy(_yy), rst(_rst) {}
 		void print(int l)
 		{
-			cerra(l) << "x:" << x << " y:" << y << " xx:" << xx << " yy:" << yy << " rst:" << rst << endl;
+			cerra(l) << "mov:[" << x << "," << y << "," << xx << "," << yy << "," << rst << "]" << endl;
 		}
 };
 
@@ -173,25 +174,25 @@ class Chessboard
 		{
 			return Chessboard(cid, m);
 		}
-		void refresh_list()
-		{
-			priority_queue <Cpiece> tpcs;
-//			cerr(0) << "CB " << cid << ":Refreshing list {" << endl;
-			for (int x = 0; x < H; x++)
-			{
-				for (int y = 0; y < W; y++)
-				{
-					if (cmap[x][y] != -2 && GetFlag(x, y) == cid)
-					{
-						tpcs.push(Cpiece(x, y));
-//						cerra(0) << "found " << GetKind(x, y) << " " << x << " " << y << endl;
-					}
-				}
-			}
-//			pcnt[cid] = tpcs.size();
-//			cerra(0) << "id " << cid << ":" << pcnt[cid] << endl;
-//			cerra(0) << "}" << endl;
-		}
+//		void refresh_list()
+//		{
+//			priority_queue <Cpiece> tpcs;
+////			cerr(0) << "CB " << cid << ":Refreshing list {" << endl;
+//			for (int x = 0; x < H; x++)
+//			{
+//				for (int y = 0; y < W; y++)
+//				{
+//					if (cmap[x][y] != -2 && GetFlag(x, y) == cid)
+//					{
+//						tpcs.push(Cpiece(x, y));
+////						cerra(0) << "found " << GetKind(x, y) << " " << x << " " << y << endl;
+//					}
+//				}
+//			}
+////			pcnt[cid] = tpcs.size();
+////			cerra(0) << "id " << cid << ":" << pcnt[cid] << endl;
+////			cerra(0) << "}" << endl;
+//		}
 		void MoveBoard(Cmove mov)
 		{
 //			if (!IsValidMove(mov))
@@ -320,7 +321,7 @@ class Chessboard
 		}
 		int PValue(int x, int y)
 		{
-//			if(IsBase(x, y) && cmap[x][y] != 11) return -INF;
+			if(IsBase(x, y) && cmap[x][y] != 11) return -INF;
 			int d = Dist(x, y, i2x(flag[!cid]), i2y(flag[!cid]));
 			int pv = -d * IsFlagBlocked(!cid) * 10;
 			if (IsCamp(x, y)) pv += 10;
@@ -377,7 +378,7 @@ class Chessboard
 							{
 //								cerra(0) << "valid" << endl;
 //								cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
-								int r = Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
+								int r = PValue(xx, yy) + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 								move.push(Cmove(x, y, xx, yy, r));
 //								cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 							}
@@ -412,15 +413,20 @@ class Chessboard
 			}
 			for (int i = 0; i < pcnt[cid]; i++)
 			{
-//				score += bv[pcs[cid][i].k] * (500 +  PValue(pcs[cid][i].x, pcs[cid][i].y));
+//				score += bv[pcs[cid][i].k] * (500 + PValue(pcs[cid][i].x, pcs[cid][i].y));
 				score += bv[pcs[cid][i].k] * 500;
 			}
 			return score;
 		}
+		bool IsGameover()
+		{
+			if (GetKind(i2x(flag[0]), i2y(flag[0])) != 11 || GetKind(i2x(flag[1]), i2y(flag[1])) != 11) return true;
+			return false;
+		}
 		void print(int l)
 		{
 			cerra(l) << "CB " << cid << ":{" << endl;
-			for (int i = H - 1; i >= 0; i--)
+			for (int i = 0; i < H; i++)
 			{
 				for (int j = 0; j < W; j++)
 				{
@@ -428,6 +434,7 @@ class Chessboard
 				}
 				cerra(l) << endl;
 			}
+			cerra(l) << "}" << endl;
 		}
 };
 Chessboard CB;
@@ -540,37 +547,37 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 //	TCB.cid = f ? id : !id;
 //	TCB.print(1);
 	int score = 0;
-	if (depth <= 0)
+	if (depth <= 0 || TCB.IsGameover())
 	{
 		score = TCB.Evaluate();
-		cerr(3) << "#0 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
-		cerra(3) << "}\n";
+		cerra(1 + depth) << "#0 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 		return score;
 	}
-	cerr(3) << "AlphaBeta(depth " << depth << "):{\n";
+	cerra(1 + depth) << "AlphaBeta(depth " << depth << "):{\n";
 	priority_queue <Cmove> move;
 	TCB.GenerateMoves(move);
 	if (move.empty())
 	{
 		score = TCB.Evaluate();
-		cerr(3) << "#1 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
-		cerra(3) << "}\n";
+		cerra(1 + depth) << "#1 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+		cerra(1 + depth) << "}\n";
 		return score;
 	}
-	cerra(3) << "Moves:" << move.size() << endl;
+	cerra(1 + depth) << "Moves:" << move.size() << endl;
 	while (!move.empty())
 	{
 		Cmove mov = move.top();
-		mov.print(2);
+		mov.print(1 + depth);
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
 		TCB.MoveBoard(mov);
 		score = -AlphaBeta(depth - 1, -beta, -alpha, !f);
+		cerra(1 + depth) << "Score:" << score << endl;
 		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
 		if (score >= beta)
 		{
-			cerra(3) << "#2 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
-			cerra(3) << "}\n";
-			return score;
+			cerra(1 + depth) << "#2 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+			cerra(1 + depth) << "}\n";
+			return beta;
 		}
 		if (score > alpha)
 		{
@@ -578,8 +585,8 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 		}
 		move.pop();
 	}
-	cerra(3) << "#3 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
-	cerra(3) << "}\n";
+	cerra(1 + depth) << "#3 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+	cerra(1 + depth) << "}\n";
 	return alpha;
 }
 
@@ -590,16 +597,21 @@ Cmove ABSearch(int depth)
 	Cmove mmov(-1, -1, -1, -1, -1);
 	priority_queue <Cmove> move;
 	TCB.GenerateMoves(move);
-	cerra(3) << "ABSearch(depth " << depth << "):{\n";
+	cerra(1 + depth) << "ABSearch(depth " << depth << "):{\n";
 	TCB.print(3);
 	int score = -INF;
 	while (!move.empty())
 	{
 		Cmove mov = move.top();
-		mov.print(2);
+		mov.print(3);
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
 		TCB.MoveBoard(mov);
-		int t = -AlphaBeta(depth, -INF, INF, 0);
+		if(TCB.IsGameover())
+		{
+			mmov = mov;
+			return mmov;
+		}
+		int t = -AlphaBeta(depth - 1, -INF, INF, 0);
 		if (t > score)
 		{
 			score = t;
@@ -626,13 +638,13 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	}
 	cerr(5) << "Layers: " << m << endl;
 #else
-	Cmove t = ABSearch(2);
+	Cmove t = ABSearch(3);
 #endif
-	if(t.x == -1)
-	{
-		cout << "GG";
-		end();
-	}
+//	if(t.x == -1)
+//	{
+//		cout << "GG";
+//		end();
+//	}
 	x = t.x;
 	y = t.y;
 	xx = t.xx;
@@ -645,6 +657,46 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	tsum += tm;
 	tavg = tsum / rounds;
 	cerr(5) << "[CT/Min/Max/Avg:" << tm << "/" << tmin << "/" << tmax << "/" << tavg << "]" << endl;
+}
+
+void MapScore()
+{
+	for (int i = 0; i < 2; i++)
+	{
+		for (int x = 0; x < H; x++)
+		{
+			for (int y = 0; y < W; y++)
+			{
+				if (!exist(x, y) || CB.GetKind(x, y) == 11) continue;
+				map_score[i][x][y] = 1000 / Dist(x, y, i2x(flag[!i]), i2y(flag[!i]));
+			}
+		}
+		for (int c = 0; c < 10; c++)
+		{
+			map_score[i][i2x(camp[c])][i2y(camp[c])] += 100;
+		}
+		for (int c = 0; c < 4; c++)
+		{
+			map_score[i][i2x(base[c])][i2y(base[c])] = -INF / 2;
+		}
+	}
+
+
+
+
+	for (int i = 0; i < 2; i++)
+	{
+		cerr << "id:" << i << endl;
+		for (int x = 0; x < H; x++)
+		{
+			for (int y = 0; y < W; y++)
+			{
+				cerr << map_score[i][x][y] << " ";
+			}
+			cerr << endl;
+		}
+		cerr << endl;
+	}
 }
 
 int main(int argc, char** argv)
@@ -682,6 +734,7 @@ int main(int argc, char** argv)
 			CB.cid = id;
 			flag[0] = (map[0][1] == 11) ? 1 : 3;
 			flag[1] = (map[16][1] == 11) ? mapi(16, 1) : mapi(16, 3);
+			MapScore();
 		}
 		else if (op == "init")
 		{
