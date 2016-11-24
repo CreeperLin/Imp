@@ -321,7 +321,7 @@ class Chessboard
 		}
 		int PValue(int x, int y)
 		{
-			if(IsBase(x, y) && cmap[x][y] != 11) return -INF;
+			if ((mapi(x, y) == base[!cid * 2] || mapi(x, y) == base[!cid * 2 + 1]) && GetKind(x, y) != 11) return -INF / 2;
 			int d = Dist(x, y, i2x(flag[!cid]), i2y(flag[!cid]));
 			int pv = -d * IsFlagBlocked(!cid) * 10;
 			if (IsCamp(x, y)) pv += 10;
@@ -359,12 +359,12 @@ class Chessboard
 //			cerra(0) << "6.";
 			if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
 //			cerra(0) << "7.";
-			if (cmap[x][y] == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
+			if (typ == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
 		void GenerateMoves(priority_queue <Cmove> &move)
 		{
-			cerr(1) << "CB " << cid << ":Generating moves:{" << endl;
+//			cerr(1) << "CB " << cid << ":Generating moves:{" << endl;
 			for (int x = 0; x < H; x++)
 			{
 				for (int y = 0; y < W ; y++)
@@ -391,7 +391,7 @@ class Chessboard
 		}
 		int Evaluate()
 		{
-			int score = 0;
+			int score[2] = {0};
 			int pcnt[2] = {0};
 			int pkind[2][TOTALKIND] = {0};
 			Cpiece pcs[2][TOTALNUM];
@@ -399,7 +399,7 @@ class Chessboard
 			{
 				for (int y = 0; y < W; y++)
 				{
-					if (map[x][y] != -2)
+					if (cmap[x][y] != -2)
 					{
 						int f = GetFlag(x, y), t = GetKind(x, y);
 						pcs[f][pcnt[f]].x = x;
@@ -411,12 +411,21 @@ class Chessboard
 					}
 				}
 			}
-			for (int i = 0; i < pcnt[cid]; i++)
+			for (int j = 0; j < 2; j++)
 			{
-//				score += bv[pcs[cid][i].k] * (500 + PValue(pcs[cid][i].x, pcs[cid][i].y));
-				score += bv[pcs[cid][i].k] * 500;
+				for (int i = 0; i < pcnt[j]; i++)
+				{
+					score[j] += bv[pcs[j][i].k] * (500 + map_score[j][pcs[j][i].x][pcs[j][i].y]);
+//					score += bv[pcs[j][i].k] * 500;
+				}
 			}
-			return score;
+//			for (int i = 0; i < pcnt[cid]; i++)
+//			{
+//				score += bv[pcs[cid][i].k] * (500 + map_score[cid][pcs[cid][i].x][pcs[cid][i].y]);
+////				score += bv[pcs[cid][i].k] * 500;
+//			}
+			return score[cid] - score[!cid];
+//			return score[cid];
 		}
 		bool IsGameover()
 		{
@@ -540,6 +549,7 @@ inline void end()
 	std::cout << "END\n" << std::flush;
 }
 
+int tcnt = 0, ecnt = 0, prcnt = 0;
 int AlphaBeta(int depth, int alpha, int beta, bool f)
 {
 //	Chessboard TCB(CB.fork(fmap));
@@ -551,6 +561,7 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 	{
 		score = TCB.Evaluate();
 		cerra(1 + depth) << "#0 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
+		tcnt++;
 		return score;
 	}
 	cerra(1 + depth) << "AlphaBeta(depth " << depth << "):{\n";
@@ -561,6 +572,7 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 		score = TCB.Evaluate();
 		cerra(1 + depth) << "#1 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 		cerra(1 + depth) << "}\n";
+		ecnt++;
 		return score;
 	}
 	cerra(1 + depth) << "Moves:" << move.size() << endl;
@@ -577,6 +589,7 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 		{
 			cerra(1 + depth) << "#2 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 			cerra(1 + depth) << "}\n";
+			prcnt++;
 			return beta;
 		}
 		if (score > alpha)
@@ -609,9 +622,10 @@ Cmove ABSearch(int depth)
 		if(TCB.IsGameover())
 		{
 			mmov = mov;
-			return mmov;
+			break;
 		}
 		int t = -AlphaBeta(depth - 1, -INF, INF, 0);
+		cerra(3) << "#Score:" << t << endl;
 		if (t > score)
 		{
 			score = t;
@@ -620,13 +634,14 @@ Cmove ABSearch(int depth)
 		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
 		move.pop();
 	}
-	cerr(3) << "Max score:" << score << endl;
+	cerra(3) << "#Max score:" << score << endl;
 	cerra(3) << "}\n";
 	return mmov;
 }
 double tmin = 5, tmax = 0, tsum = 0, tavg = 0;
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
+	tcnt = ecnt = prcnt = 0;
 	st = clock();
 #if DYMLYR == 1
 	Cmove t(-1, -1, -1, -1, -1);
@@ -656,7 +671,7 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	tmax = max(tmax, tm);
 	tsum += tm;
 	tavg = tsum / rounds;
-	cerr(5) << "[CT/Min/Max/Avg:" << tm << "/" << tmin << "/" << tmax << "/" << tavg << "]" << endl;
+	cerr(5) << "[CT/Min/Max/Avg/TC/EC/PC:" << tm << "/" << tmin << "/" << tmax << "/" << tavg << "/" << tcnt << "/" << ecnt << "/" << prcnt << "]" << endl;
 }
 
 void MapScore()
@@ -673,16 +688,20 @@ void MapScore()
 		}
 		for (int c = 0; c < 10; c++)
 		{
-			map_score[i][i2x(camp[c])][i2y(camp[c])] += 100;
+			map_score[i][i2x(camp[c])][i2y(camp[c])] += 150;
 		}
 		for (int c = 0; c < 4; c++)
 		{
 			map_score[i][i2x(base[c])][i2y(base[c])] = -INF / 2;
 		}
+		for (int c = i * 2; c < i * 2 + 2; c++)
+		{
+			map_score[i][i2x(base[c])][i2y(base[c])] = 0;
+		}
+		map_score[i][i2x(flag[!i])][6 - 2 * i2y(flag[!i])] = -50;
+		map_score[i][i2x(flag[!i])][2] += 1000;
+		map_score[i][i2x(flag[!i])][i2y(flag[!i])] = INF / 2;
 	}
-
-
-
 
 	for (int i = 0; i < 2; i++)
 	{
