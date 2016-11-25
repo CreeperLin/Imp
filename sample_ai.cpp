@@ -55,6 +55,7 @@ int swe[] = {mapi(15, 0), mapi(15, 2), mapi(15, 4), mapi(14, 1), mapi(14, 3), ma
 int base[] = {mapi(0, 1), mapi(0, 3), mapi(16, 1), mapi(16, 3)};
 int camp[] = {mapi(2, 1), mapi(2, 3), mapi(3, 2), mapi(4, 1), mapi(4, 3), mapi(12, 1), mapi(12, 3), mapi(13, 2), mapi(14, 1), mapi(14, 3)};
 int bv[TOTALKIND] = {10, 9, 8, 7, 6, 5, 4, 3, 2, 7, 8, 150};
+int bnum[TOTALKIND] = {1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 2, 1};
 
 bool exist(int x, int y)
 {
@@ -291,13 +292,14 @@ class Chessboard
 				for (int i = 0; i < 4; i++)
 				{
 					int cx = qx[l] + DX[i], cy = qy[l] + DY[i];
-					if(cx == xx && cy == yy)
+					if(0 <= cy && cy < W && 0 <= cx && cx < H && !vmap[cx][cy] && ((i > 1 && IsOnHRail(cx, cy)) || (i < 2 && IsOnVRail(cx, cy))))
 					{
-//						cerra(0) << "(bfs: " << l << " " << r << ")=Y" << endl;
-						return true;
-					}
-					if(IsOnRail(cx, cy) && cmap[cx][cy] == -2 && !vmap[cx][cy])
-					{
+						if (cx == xx && cy == yy)
+						{
+							cerra(0) << "(bfs: " << l << " " << r << ")=Y" << endl;
+							return true;
+						}
+						if (cmap[cx][cy] != -2) continue;
 						qx[r] = cx;
 						qy[r] = cy;
 						vmap[cx][cy] = 1;
@@ -306,7 +308,7 @@ class Chessboard
 				}
 				l++;
 			}
-//			cerra(0) << "(bfs: " << l << " " << r << ")=N" << endl;
+			cerra(0) << "(bfs: " << l << " " << r << ")=N" << endl;
 			return false;
 		}
 		bool IsFlagBlocked(int tid)
@@ -415,7 +417,8 @@ class Chessboard
 			{
 				for (int i = 0; i < pcnt[j]; i++)
 				{
-					score[j] += bv[pcs[j][i].k] * (500 + map_score[j][pcs[j][i].x][pcs[j][i].y]);
+					int k = pcs[j][i].k;
+					score[j] += (1 + pkind[j][k]) / bnum[k] * bv[k] * (500 + map_score[j][pcs[j][i].x][pcs[j][i].y]);
 //					score += bv[pcs[j][i].k] * 500;
 				}
 			}
@@ -473,7 +476,7 @@ void show_init(int id)
 	//this line : kind1 kind2 ... etc
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
-	int opt[25] = {10, 11, 10, 2, 2, 9, 9, 9, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+	int opt[25] = {9, 11, 9, 2, 2, 10, 9, 10, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
 //	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
@@ -616,7 +619,7 @@ Cmove ABSearch(int depth)
 	while (!move.empty())
 	{
 		Cmove mov = move.top();
-		mov.print(3);
+		mov.print(depth);
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
 		TCB.MoveBoard(mov);
 		if(TCB.IsGameover())
@@ -625,7 +628,7 @@ Cmove ABSearch(int depth)
 			break;
 		}
 		int t = -AlphaBeta(depth - 1, -INF, INF, 0);
-		cerra(3) << "#Score:" << t << endl;
+		cerra(1 + depth) << "#Score:" << t << endl;
 		if (t > score)
 		{
 			score = t;
@@ -634,8 +637,8 @@ Cmove ABSearch(int depth)
 		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
 		move.pop();
 	}
-	cerra(3) << "#Max score:" << score << endl;
-	cerra(3) << "}\n";
+	cerra(1 + depth) << "#Max score:" << score << endl;
+	cerra(1 + depth) << "}\n";
 	return mmov;
 }
 double tmin = 5, tmax = 0, tsum = 0, tavg = 0;
@@ -689,6 +692,10 @@ void MapScore()
 		for (int c = 0; c < 10; c++)
 		{
 			map_score[i][i2x(camp[c])][i2y(camp[c])] += 150;
+		}
+		for (int c = !i * 5; c < !i * 5 + 5; c++)
+		{
+			map_score[i][i2x(camp[c])][i2y(camp[c])] += 300;
 		}
 		for (int c = 0; c < 4; c++)
 		{
