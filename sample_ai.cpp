@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 5
+#define LOGLVL 4
 #define DYMLYR 0
 #define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
 #define cerra(i) if(LOGLVL<=i) cerr
@@ -481,9 +481,10 @@ void show_init(int id)
 	//this line : kind1 kind2 ... etc
 	//Imagine that the chesses are listed from the bottom to the top, left to right
 	//This is a stupid start:
-	int opt[25] = {9, 11, 9, 2, 2, 10, 9, 10, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
+//	int opt[25] = {9, 11, 9, 2, 2, 10, 9, 10, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 1, 0, 3, 3};
 //	int opt[25] = {9, 11, 9, 7, 8, 7, 9, 8, 8, 6, 4, 10, 4, 5, 6, 6, 5, 3, 10, 3, 0, 2, 1, 7, 2};
 //	int opt[25] = {9, 11, 9, 7, 6, 7, 9, 8, 7, 6, 4, 6, 4, 5, 10, 8, 5, 3, 10, 3, 0, 2, 1, 8, 2};
+	int opt[25] = {7 , 11, 6, 7, 6, 9, 4, 9, 5, 9, 7, 6, 4, 2, 8, 8, 5, 10, 3, 10, 1, 3, 0, 8, 2};
 	for (int i = 0; i < 25; ++i)
 		cout << opt[i] << ' ';
 	cout << endl;
@@ -622,11 +623,11 @@ Cmove ABSearch(int depth)
 	cerra(1 + depth) << "ABSearch(depth " << depth << "):{\n";
 	TCB.print(3);
 	int score = -INF;
-	while (!move.empty())
+	while (!move.empty() && get_time() < 0.8)
 	{
 		Cmove mov = move.top();
 		mov.print(depth);
-		if (mov.rst < -INF / 3)
+		if (mov.rst < -2000)
 		{
 			move.pop();
 			continue;
@@ -668,7 +669,7 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	tcnt = ecnt = prcnt = 0;
 	st = clock();
 	Cmove t;
-	if (peacemov >= 20)
+	if (peacemov >= 30)
 	{
 		cerr(5) << "Naive move!" << endl;
 		t = Naive();
@@ -684,7 +685,7 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 		}
 		cerr(5) << "Layers: " << m << endl;
 #else
-		t = ABSearch(3);
+		t = ABSearch(4);
 #endif
 	}
 //	if(t.x == -1)
@@ -720,11 +721,11 @@ void MapScore()
 				map_score[i][x][y] = 1000 / Dist(x, y, fx, fy);
 			}
 		}
-		for (int k = 0; k < 4; k++)
-		{
-			int cx = fx + DX[k], cy = fy + DY[k];
-			if (exist(cx, cy)) map_score[i][cx][cy] += 1500;
-		}
+//		for (int k = 0; k < 4; k++)
+//		{
+//			int cx = fx + DX[k], cy = fy + DY[k];
+//			if (exist(cx, cy)) map_score[i][cx][cy] += 1500;
+//		}
 		for (int c = 0; c < 10; c++)
 		{
 			map_score[i][i2x(camp[c])][i2y(camp[c])] += 150;
@@ -735,7 +736,7 @@ void MapScore()
 		}
 		for (int c = 0; c < 4; c++)
 		{
-			map_score[i][i2x(base[c])][i2y(base[c])] = -INF / 2;
+			map_score[i][i2x(base[c])][i2y(base[c])] = -INF / 1000;
 		}
 		for (int c = i * 2; c < i * 2 + 2; c++)
 		{
@@ -743,7 +744,7 @@ void MapScore()
 		}
 		map_score[i][fx][6 - 2 * fy] = -50;
 		map_score[i][fx][2] += 1000;
-		map_score[i][fx][fy] = INF / 2;
+		map_score[i][fx][fy] = INF / 1000;
 	}
 
 	for (int i = 0; i < 2; i++)
@@ -787,7 +788,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr(5) << "My id:" << id << endl;
-			cout << "Imp-Trial-AB-RC-III" << endl;
+			cout << "Imp-Trial-AB-RC-IV-TC-hh" << endl;
 			end();
 		}
 		else if (op == "refresh")
