@@ -6,7 +6,7 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
-#define LOGLVL 4
+#define LOGLVL 5
 #define DYMLYR 0
 #define cerr(i) if(LOGLVL<=i) cerr<<"INFO"<<" "<<i<<":"
 #define cerra(i) if(LOGLVL<=i) cerr
@@ -138,10 +138,6 @@ class Cpiece
 		int k;
 		Cpiece(): x(0), y(0), k(-1) {}
 		Cpiece(int _x, int _y): x(_x), y(_y) {}
-		bool operator<(Cpiece t) const
-		{
-			return (id) ^ (this->x < t.x);//?
-		}
 		void print(int l)
 		{
 			cerra(l) << "x:" << x << " y:" << y << endl;
@@ -176,32 +172,8 @@ class Chessboard
 		{
 			return Chessboard(cid, m);
 		}
-//		void refresh_list()
-//		{
-//			priority_queue <Cpiece> tpcs;
-////			cerr(0) << "CB " << cid << ":Refreshing list {" << endl;
-//			for (int x = 0; x < H; x++)
-//			{
-//				for (int y = 0; y < W; y++)
-//				{
-//					if (cmap[x][y] != -2 && GetFlag(x, y) == cid)
-//					{
-//						tpcs.push(Cpiece(x, y));
-////						cerra(0) << "found " << GetKind(x, y) << " " << x << " " << y << endl;
-//					}
-//				}
-//			}
-////			pcnt[cid] = tpcs.size();
-////			cerra(0) << "id " << cid << ":" << pcnt[cid] << endl;
-////			cerra(0) << "}" << endl;
-//		}
 		void MoveBoard(Cmove mov)
 		{
-//			if (!IsValidMove(mov))
-//			{
-//				cerr << "Boom" << endl;
-//				cout << "halt";
-//			}
 			bool t = IsKilled(mov);
 			if(IsKill(mov) || cmap[mov.xx][mov.yy] == -2)
 			{
@@ -297,7 +269,6 @@ class Chessboard
 					{
 						if (cx == xx && cy == yy)
 						{
-							cerra(0) << "(bfs: " << l << " " << r << ")=Y" << endl;
 							return true;
 						}
 						if (cmap[cx][cy] != -2) continue;
@@ -309,7 +280,6 @@ class Chessboard
 				}
 				l++;
 			}
-			cerra(0) << "(bfs: " << l << " " << r << ")=N" << endl;
 			return false;
 		}
 		inline bool IsFlagBlocked(int tid)
@@ -345,29 +315,20 @@ class Chessboard
 		bool IsValidMove(int x, int y, int xx, int yy)
 		{
 			int typ = GetKind(x, y), tgtflg = GetFlag(xx, yy), objflg = GetFlag(x, y);
-//			cerra(0) << "#id " << cid << " #o " << cmap[x][y] << " #t " << cmap[xx][yy] << " " << typ << " " << tgtflg << " " << objflg << ")validating.0.";
 			bool t = ((x == xx && y == yy) || (!exist(x, y)) || (!exist(xx, yy)) || (cmap[x][y] == -2) || (objflg != cid) || (( x == 0 ||  x == 16) && (y == 1 || y == 3)) || (cmap[xx][yy] != -2 && IsCamp(xx, yy)) || ((cmap[xx][yy] != -2) && (tgtflg == cid)) || (typ == 9) || (typ == 11));
 			if (t) return false;
 			int dx = xx - x, dy = yy - y;
-//			cerra(0) << "1.";
 			if (!dx && (dy == 1 || dy == -1)) return true;
-//			cerra(0) << "2.";
 			if (!dy && (dx == 1 || dx == -1)) return true;
-//			cerra(0) << "3.";
 			if ((dx == 1 && (dy == -1 || dy == 1)) && IsNWE(x, y)) return true;
-//			cerra(0) << "4.";
 			if ((dx == -1 && (dy == -1 || dy == 1)) && IsSWE(x, y)) return true;
-//			cerra(0) << "5.";
 			if (IsOnHRail(x, y) && IsOnHRail(xx, yy) && IsHReach(x, y, xx, yy)) return true;
-//			cerra(0) << "6.";
 			if (IsOnVRail(x, y) && IsOnVRail(xx, yy) && IsVReach(x, y, xx, yy)) return true;
-//			cerra(0) << "7.";
 			if (typ == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
 		void GenerateMoves(priority_queue <Cmove> &move)
 		{
-//			cerr(1) << "CB " << cid << ":Generating moves:{" << endl;
 			for (int x = 0; x < H; x++)
 			{
 				for (int y = 0; y < W ; y++)
@@ -376,21 +337,15 @@ class Chessboard
 					{
 						for (int yy = 0; yy < W ; yy++)
 						{
-//							cerra(0) << "Trial " << " : " << x << ", " << y << " to " << xx << ", " << yy << "..(";
 							if (IsValidMove(x, y, xx, yy))
 							{
-//								cerra(0) << "valid" << endl;
-//								cerra(1) << "IsKill:" << IsKill(x, y, xx, yy) << " IsKilled:" << IsKilled(x, y, xx, yy) << " ValueSub:" << Value(x, y) << " ValueObj:" << Value(xx, yy) << endl;
 								int r = map_score[cid][xx][yy] + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
 								move.push(Cmove(x, y, xx, yy, r));
-//								cerra(1) << "push " << x << " " << y << " " << xx << " " << yy << " " << 0 << endl;
 							}
-//							else cerra(0) << "invalid" << endl;
 						}
 					}
 				}
 			}
-			cerra(1) << "}\n";
 		}
 		int Evaluate()
 		{
@@ -408,7 +363,6 @@ class Chessboard
 						pcs[f][pcnt[f]].x = x;
 						pcs[f][pcnt[f]].y = y;
 						pcs[f][pcnt[f]].k = t;
-//						cerr(0) << "found " << t << " " << f << " " << x << " " << y << endl;
 						pcnt[f]++;
 						pkind[f][t]++;
 					}
@@ -420,18 +374,11 @@ class Chessboard
 				{
 					int k = pcs[j][i].k;
 					score[j] += (1 + pkind[j][k]) / bnum[k] * bv[k] * (500 + map_score[j][pcs[j][i].x][pcs[j][i].y]);
-//					score += bv[pcs[j][i].k] * 500;
 				}
 				if (pkind[j][9] < 3) score[j] -= 1500;
 				if (IsFlagBlocked(j)) score[j] += 5000;
 			}
-//			for (int i = 0; i < pcnt[cid]; i++)
-//			{
-//				score += bv[pcs[cid][i].k] * (500 + map_score[cid][pcs[cid][i].x][pcs[cid][i].y]);
-////				score += bv[pcs[cid][i].k] * 500;
-//			}
 			return score[cid] - score[!cid];
-//			return score[cid];
 		}
 		inline bool IsGameover()
 		{
@@ -562,10 +509,7 @@ inline void end()
 int tcnt = 0, ecnt = 0, prcnt = 0, tnsum = 0;
 int AlphaBeta(int depth, int alpha, int beta, bool f)
 {
-//	Chessboard TCB(CB.fork(fmap));
 	Chessboard TCB((f ? id : !id), fmap);
-//	TCB.cid = f ? id : !id;
-//	TCB.print(1);
 	int score = 0;
 	if (depth <= 0 || TCB.IsGameover())
 	{
@@ -640,7 +584,6 @@ Cmove ABSearch(int depth)
 			break;
 		}
 		int ex = 0;
-//		if (mov.rst > 3000) ex = 1;
 		int t = -AlphaBeta(ex + depth - 1, -INF, INF, 0);
 		cerra(1 + depth) << "#Score:" << t << endl;
 		if (t > score)
@@ -688,17 +631,15 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 		t = ABSearch(4);
 #endif
 	}
-//	if(t.x == -1)
-//	{
-//		cout << "GG";
-//		end();
-//	}
+	if(t.x == -1)
+	{
+		cout << "GG";
+		end();
+	}
 	x = t.x;
 	y = t.y;
 	xx = t.xx;
 	yy = t.yy;
-//	cerr(2) << "printing valid moves:";
-//	t.print(2);
 	double tm = get_time();
 	tmin = min(tmin, tm);
 	tmax = max(tmax, tm);
@@ -796,7 +737,7 @@ int main(int argc, char** argv)
 			get_init();
 			CB.cid = id;
 			flag[0] = (map[0][1] == 11) ? 1 : 3;
-			flag[1] = (map[16][1] == 11) ? mapi(16, 1) : mapi(16, 3);
+			flag[1] = (map[16][1] == 23) ? mapi(16, 1) : mapi(16, 3);
 			MapScore();
 		}
 		else if (op == "init")
