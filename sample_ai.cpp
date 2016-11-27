@@ -327,7 +327,7 @@ class Chessboard
 			if (typ == 8 && IsOnRail(x, y) && IsOnRail(xx, yy) && IsReach(x, y, xx, yy)) return true;
 			return false;
 		}
-		void GenerateMoves(priority_queue <Cmove> &move)
+		void GenerateMoves(vector <Cmove> &move)
 		{
 			for (int x = 0; x < H; x++)
 			{
@@ -340,7 +340,7 @@ class Chessboard
 							if (IsValidMove(x, y, xx, yy))
 							{
 								int r = map_score[cid][xx][yy] + Value(xx, yy) * IsKill(x, y, xx, yy) - Value(x, y) * IsKilled(x, y, xx, yy);
-								move.push(Cmove(x, y, xx, yy, r));
+								move.push_back(Cmove(x, y, xx, yy, r));
 							}
 						}
 					}
@@ -519,7 +519,7 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 		return score;
 	}
 	cerra(1 + depth) << "AlphaBeta(depth " << depth << "):{\n";
-	priority_queue <Cmove> move;
+	vector <Cmove> move;
 	TCB.GenerateMoves(move);
 	if (move.empty())
 	{
@@ -529,10 +529,11 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 		ecnt++;
 		return score;
 	}
-	cerra(1 + depth) << "Moves:" << move.size() << endl;
-	while (!move.empty())
+	int sz = move.size();
+	cerra(1 + depth) << "Moves:" << sz << endl;
+	for (int i = 0; i < sz; i++)
 	{
-		Cmove mov = move.top();
+		Cmove mov = move[i];
 		mov.print(1 + depth);
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
 		TCB.MoveBoard(mov);
@@ -550,7 +551,6 @@ int AlphaBeta(int depth, int alpha, int beta, bool f)
 		{
 			alpha = score;
 		}
-		move.pop();
 	}
 	cerra(1 + depth) << "#3 Score:" << score << " Alpha:" << alpha << " Beta:" << beta << endl;
 	cerra(1 + depth) << "}\n";
@@ -562,18 +562,19 @@ Cmove ABSearch(int depth)
 	memcpy(fmap, map, sizeof(map));
 	Chessboard TCB(CB.fork(fmap));
 	Cmove mmov(-1, -1, -1, -1, -1);
-	priority_queue <Cmove> move;
+	vector <Cmove> move;
 	TCB.GenerateMoves(move);
 	cerra(1 + depth) << "ABSearch(depth " << depth << "):{\n";
 	TCB.print(3);
 	int score = -INF;
-	while (!move.empty() && get_time() < 0.8)
+	int sz = move.size();
+	cerra(1 + depth) << "Moves:" << sz << endl;
+	for (int i = 0; i < sz && get_time() < 0.8; i++)
 	{
-		Cmove mov = move.top();
+		Cmove mov = move[i];
 		mov.print(depth);
 		if (mov.rst < -2000)
 		{
-			move.pop();
 			continue;
 		}
 		int t1 = fmap[mov.x][mov.y], t2 = fmap[mov.xx][mov.yy];
@@ -591,20 +592,12 @@ Cmove ABSearch(int depth)
 			mmov = mov;
 		}
 		fmap[mov.x][mov.y] = t1, fmap[mov.xx][mov.yy] = t2;
-		move.pop();
 	}
 	cerra(1 + depth) << "#Max score:" << score << endl;
 	cerra(1 + depth) << "}\n";
 	return mmov;
 }
 double tmin = 5, tmax = 0, tsum = 0, tavg = 0;
-
-Cmove Naive()
-{
-	priority_queue <Cmove> mov;
-	CB.GenerateMoves(mov);
-	return mov.top();
-}
 
 void make_decision(int &x, int &y, int &xx, int &yy)
 {
@@ -720,7 +713,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr(5) << "My id:" << id << endl;
-			cout << "Imp-Trial-AB-RC-IV-TC-hhsec" << endl;
+			cout << "Imp-Trial-AB-RC-IV-TC-hhsecvec" << endl;
 			end();
 		}
 		else if (op == "refresh")
