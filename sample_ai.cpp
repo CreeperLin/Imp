@@ -583,8 +583,7 @@ Cmove ABSearch(int depth)
 			mmov = mov;
 			break;
 		}
-		int ex = 0;
-		int t = -AlphaBeta(ex + depth - 1, -INF, INF, 0);
+		int t = -AlphaBeta(depth - 1, -INF, INF, 0);
 		cerra(1 + depth) << "#Score:" << t << endl;
 		if (t > score)
 		{
@@ -612,25 +611,17 @@ void make_decision(int &x, int &y, int &xx, int &yy)
 	tcnt = ecnt = prcnt = 0;
 	st = clock();
 	Cmove t;
-	if (peacemov >= 30)
-	{
-		cerr(5) << "Naive move!" << endl;
-		t = Naive();
-	}
-	else
-	{
 #if DYMLYR == 1
-		int m = 0;
-		while (30 * get_time() < 1)
-		{
-			m++;
-			t = ABSearch(m);
-		}
-		cerr(5) << "Layers: " << m << endl;
-#else
-		t = ABSearch(4);
-#endif
+	int m = 0;
+	while (30 * get_time() < 1)
+	{
+		m++;
+		t = ABSearch(m);
 	}
+	cerr(5) << "Layers: " << m << endl;
+#else
+	t = ABSearch(4);
+#endif
 	if(t.x == -1)
 	{
 		cout << "GG";
@@ -729,7 +720,7 @@ int main(int argc, char** argv)
 		{
 			cin >> id;
 			cerr(5) << "My id:" << id << endl;
-			cout << "Imp-Trial-AB-RC-IV-TC-hh" << endl;
+			cout << "Imp-Trial-AB-RC-IV-TC-hhsec" << endl;
 			end();
 		}
 		else if (op == "refresh")
